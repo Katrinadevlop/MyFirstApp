@@ -84,8 +84,7 @@
         android:layout_marginTop="16dp"
         android:src="@drawable/heart"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/barier1"
-        app:tint="@android:color/darker_gray" />
+        app:layout_constraintTop_toBottomOf="@+id/barier1" />
 
     <TextView
         android:id="@+id/textView"
@@ -93,14 +92,13 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
         android:layout_marginTop="16dp"
-        android:text="10"
         android:textColor="@android:color/darker_gray"
         android:textSize="16sp"
         app:layout_constraintStart_toEndOf="@+id/heart"
         app:layout_constraintTop_toBottomOf="@+id/barier1" />
 
     <ImageView
-        android:id="@+id/imageView2"
+        android:id="@+id/share"
         android:layout_width="20dp"
         android:layout_height="20dp"
         android:layout_marginStart="16dp"
@@ -111,17 +109,18 @@
         app:tint="@android:color/darker_gray" />
 
     <TextView
+        android:id="@+id/shareId"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
         android:layout_marginStart="8dp"
-        android:text="5"
         android:textColor="@android:color/darker_gray"
         android:textSize="16sp"
-        app:layout_constraintStart_toEndOf="@+id/imageView2"
+        app:layout_constraintStart_toEndOf="@+id/share"
         app:layout_constraintTop_toBottomOf="@+id/barier1" />
 
     <ImageView
+        android:id="@+id/eyse"
         android:layout_width="20dp"
         android:layout_height="20dp"
         android:layout_marginTop="16dp"
@@ -137,7 +136,6 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
         android:layout_marginEnd="16dp"
-        android:text="5к"
         android:textColor="@android:color/darker_gray"
         android:textSize="16sp"
         app:layout_constraintEnd_toEndOf="parent"
