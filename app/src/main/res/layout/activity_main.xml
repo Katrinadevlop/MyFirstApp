@@ -9,7 +9,7 @@
     tools:context=".MainActivity">
 
     <ImageView
-        android:id="@+id/imageView"
+        android:id="@+id/logoNetology"
         android:layout_width="40dp"
         android:layout_height="40dp"
         android:layout_marginStart="16dp"
@@ -31,7 +31,7 @@
         android:textSize="16sp"
         app:layout_constraintBottom_toTopOf="@+id/dateText"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@+id/imageView"
+        app:layout_constraintStart_toEndOf="@+id/logoNetology"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_chainStyle="packed" />
 
@@ -42,10 +42,10 @@
         android:layout_marginStart="16dp"
         android:layout_marginEnd="16dp"
         android:text="21 мая в 18:36"
-        android:textColor="@android:color/darker_gray"
+        android:textColor="@color/darker_gray"
         android:textSize="16sp"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@+id/imageView"
+        app:layout_constraintStart_toEndOf="@+id/logoNetology"
         app:layout_constraintTop_toBottomOf="@+id/titleText" />
 
     <androidx.constraintlayout.widget.Barrier
@@ -53,7 +53,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         app:barrierDirection="bottom"
-        app:constraint_referenced_ids="imageView,titleText,dateText" />
+        app:constraint_referenced_ids="logoNetology,titleText,dateText" />
 
     <TextView
         android:id="@+id/postText"
@@ -63,7 +63,7 @@
         android:layout_marginTop="16dp"
         android:layout_marginEnd="16dp"
         android:text="@string/http_netolo_gy_fyb"
-        android:textColor="@android:color/black"
+        android:textColor="@color/black"
         android:textSize="14sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -77,24 +77,24 @@
         app:constraint_referenced_ids="postText" />
 
     <ImageView
-        android:id="@+id/heart"
+        android:id="@+id/like"
         android:layout_width="20dp"
         android:layout_height="20dp"
         android:layout_marginStart="16dp"
         android:layout_marginTop="16dp"
-        android:src="@drawable/heart"
+        android:src="@drawable/ic_heart"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/barier1" />
 
     <TextView
-        android:id="@+id/textView"
+        android:id="@+id/numberLike"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
         android:layout_marginTop="16dp"
-        android:textColor="@android:color/darker_gray"
+        android:textColor="@color/darker_gray"
         android:textSize="16sp"
-        app:layout_constraintStart_toEndOf="@+id/heart"
+        app:layout_constraintStart_toEndOf="@+id/like"
         app:layout_constraintTop_toBottomOf="@+id/barier1" />
 
     <ImageView
@@ -103,40 +103,40 @@
         android:layout_height="20dp"
         android:layout_marginStart="16dp"
         android:layout_marginTop="16dp"
-        android:src="@android:drawable/ic_menu_share"
-        app:layout_constraintStart_toEndOf="@+id/textView"
+        android:src="@drawable/ic_share"
+        app:layout_constraintStart_toEndOf="@+id/numberLike"
         app:layout_constraintTop_toBottomOf="@+id/barier1"
-        app:tint="@android:color/darker_gray" />
+        app:tint="@color/darker_gray" />
 
     <TextView
-        android:id="@+id/shareId"
+        android:id="@+id/numberShare"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
         android:layout_marginStart="8dp"
-        android:textColor="@android:color/darker_gray"
+        android:textColor="@color/darker_gray"
         android:textSize="16sp"
         app:layout_constraintStart_toEndOf="@+id/share"
         app:layout_constraintTop_toBottomOf="@+id/barier1" />
 
     <ImageView
-        android:id="@+id/eyse"
+        android:id="@+id/viewing"
         android:layout_width="20dp"
         android:layout_height="20dp"
         android:layout_marginTop="16dp"
         android:layout_marginEnd="8dp"
-        android:src="@android:drawable/ic_menu_view"
-        app:layout_constraintEnd_toStartOf="@+id/textView2"
+        android:src="@drawable/ic_eye"
+        app:layout_constraintEnd_toStartOf="@+id/numberViews"
         app:layout_constraintTop_toBottomOf="@+id/barier1"
-        app:tint="@android:color/darker_gray" />
+        app:tint="@color/darker_gray" />
 
     <TextView
-        android:id="@+id/textView2"
+        android:id="@+id/numberViews"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
         android:layout_marginEnd="16dp"
-        android:textColor="@android:color/darker_gray"
+        android:textColor="@color/darker_gray"
         android:textSize="16sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/barier1" />
