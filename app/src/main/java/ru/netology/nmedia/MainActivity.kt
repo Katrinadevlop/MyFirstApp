@@ -3,8 +3,6 @@ package ru.netology.nmedia
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import ru.netology.nmedia.databinding.ActivityMainBinding
-import java.util.Locale
-import kotlin.math.floor
 
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
@@ -19,26 +17,27 @@ class MainActivity : AppCompatActivity() {
         var shareCount = 0
         var viewCount = 0
 
-        binding.textView.text = formatCount(likeCount)
-        binding.shareId.text = formatCount(shareCount)
+        binding.numberLike.text = formatCount(likeCount)
+        binding.numberShare.text = formatCount(shareCount)
+        binding.numberViews.text = formatCount(viewCount)
 
-        binding.heart.setOnClickListener {
+        binding.like.setOnClickListener {
             liked = !liked
             likeCount = (likeCount + if (liked) 1 else -1).coerceAtLeast(0)
-            binding.heart.setImageResource(
-                if (liked) R.drawable.heart_red else R.drawable.heart
+            binding.like.setImageResource(
+                if (liked) R.drawable.ic_heart_red else R.drawable.ic_heart
             )
-            binding.textView.text = formatCount(likeCount)
+            binding.numberLike.text = formatCount(likeCount)
         }
 
         binding.share.setOnClickListener {
             shareCount += 1
-            binding.shareId.text = formatCount(shareCount)
+            binding.numberShare.text = formatCount(shareCount)
         }
 
-        binding.eyse.setOnClickListener {
+        binding.viewing.setOnClickListener {
             viewCount += 1
-            binding.textView2.text = formatCount(viewCount)
+            binding.numberViews.text = formatCount(viewCount)
         }
     }
 
