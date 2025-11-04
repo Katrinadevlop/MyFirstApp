@@ -6,7 +6,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:padding="16dp"
-    tools:context=".MainActivity">
+    tools:context=".activity.MainActivity">
 
     <ImageView
         android:id="@+id/logoNetology"
@@ -27,7 +27,6 @@
         android:layout_marginBottom="4dp"
         android:ellipsize="end"
         android:maxLines="1"
-        android:text="Нетология. Университет интернет-профессий будущего"
         android:textSize="16sp"
         app:layout_constraintBottom_toTopOf="@+id/dateText"
         app:layout_constraintEnd_toEndOf="parent"
@@ -41,7 +40,6 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
         android:layout_marginEnd="16dp"
-        android:text="21 мая в 18:36"
         android:textColor="@color/darker_gray"
         android:textSize="16sp"
         app:layout_constraintEnd_toEndOf="parent"
@@ -62,7 +60,6 @@
         android:layout_marginStart="16dp"
         android:layout_marginTop="16dp"
         android:layout_marginEnd="16dp"
-        android:text="@string/http_netolo_gy_fyb"
         android:textColor="@color/black"
         android:textSize="14sp"
         app:layout_constraintEnd_toEndOf="parent"
@@ -140,6 +137,5 @@
         android:textSize="16sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/barier1" />
-
 
 </androidx.constraintlayout.widget.ConstraintLayout>
