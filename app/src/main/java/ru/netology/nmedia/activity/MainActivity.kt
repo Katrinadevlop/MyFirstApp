@@ -1,44 +1,39 @@
-package ru.netology.nmedia
+package ru.netology.nmedia.activity
 
 import android.os.Bundle
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import ru.netology.nmedia.R
 import ru.netology.nmedia.databinding.ActivityMainBinding
+import ru.netology.nmedia.viewmodel.PostViewModel
+import kotlin.math.abs
 
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
+    private val viewModel: PostViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        var liked = false
-        var likeCount = 0
-        var shareCount = 0
-        var viewCount = 0
-
-        binding.numberLike.text = formatCount(likeCount)
-        binding.numberShare.text = formatCount(shareCount)
-        binding.numberViews.text = formatCount(viewCount)
-
-        binding.like.setOnClickListener {
-            liked = !liked
-            likeCount = (likeCount + if (liked) 1 else -1).coerceAtLeast(0)
-            binding.like.setImageResource(
-                if (liked) R.drawable.ic_heart_red else R.drawable.ic_heart
-            )
-            binding.numberLike.text = formatCount(likeCount)
+        viewModel.data.observe(this) { post ->
+            with(binding) {
+                titleText.text = post.author
+                dateText.text = post.published
+                postText.text = post.content
+                numberLike.text = formatCount(post.likes)
+                numberShare.text = formatCount(post.shares)
+                numberViews.text = formatCount(post.views)
+                like.setImageResource(
+                    if (post.likedByMe) R.drawable.ic_heart_red else R.drawable.ic_heart
+                )
+            }
         }
 
-        binding.share.setOnClickListener {
-            shareCount += 1
-            binding.numberShare.text = formatCount(shareCount)
-        }
-
-        binding.viewing.setOnClickListener {
-            viewCount += 1
-            binding.numberViews.text = formatCount(viewCount)
-        }
+        binding.like.setOnClickListener { viewModel.like() }
+        binding.share.setOnClickListener { viewModel.share() }
+        binding.viewing.setOnClickListener { viewModel.view() }
     }
 
     private fun formatCount(n: Int): String = shortCount(n.toLong())
@@ -48,7 +43,7 @@ class MainActivity : AppCompatActivity() {
         val m = if (useLatinUnits) "M" else "М"
 
         val sign = if (n < 0) "-" else ""
-        val v = kotlin.math.abs(n)
+        val v = abs(n)
 
         return when {
             v < 1_000L -> sign + v.toString()
