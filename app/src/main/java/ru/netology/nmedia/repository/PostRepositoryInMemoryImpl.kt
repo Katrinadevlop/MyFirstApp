@@ -6,7 +6,7 @@ import ru.netology.nmedia.dto.Post
 import kotlin.collections.map
 
 class PostRepositoryInMemoryImpl : PostRepository {
-    private var posts = List(100) {
+    private var posts = List(5) {
         Post(
             id = it + 1L,
             author = "Нетология. Университет интернет-профессий будущего",
@@ -18,6 +18,7 @@ class PostRepositoryInMemoryImpl : PostRepository {
             views = 99,
         )
     }
+    private var nextId: Long = (posts.maxOfOrNull { it.id } ?: 0L) + 1L
     private val data = MutableLiveData(posts)
 
     override fun get(): LiveData<List<Post>> = data
@@ -53,6 +54,30 @@ class PostRepositoryInMemoryImpl : PostRepository {
             else
                 it.copy(views = it.views + 1)
         }
+        data.value = posts
+    }
+
+    override fun remove(id: Long) {
+        posts = posts.filter { it.id != id }
+        data.value = posts
+    }
+
+    override fun add(post: Post) {
+        val newPost = post.copy(
+            id = nextId++,
+            author =  "My",
+            likedByMe = false,
+            likes = 0,
+            shares = 0,
+            views = 0,
+            published = "now",
+        )
+        posts = listOf(newPost) + posts
+        data.value = posts
+    }
+
+    override fun updateContentById(id: Long, content: String) {
+        posts = posts.map { if (it.id != id) it else it.copy(content = content) }
         data.value = posts
     }
 }
