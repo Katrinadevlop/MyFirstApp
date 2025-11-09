@@ -21,18 +21,14 @@ class PostsViewHolder(
         titleText.text = post.author
         dateText.text = post.published
         postText.text = post.content
-        numberLike.text = formatCount(post.likes)
-        numberShare.text = formatCount(post.shares)
-        numberViews.text = formatCount(post.views)
-
-        like.setImageResource(
-            if (post.likedByMe) R.drawable.ic_heart_red else R.drawable.ic_heart
-        )
+        like.text = formatCount(post.likes)
+        share.text = formatCount(post.shares)
+        viewing.text = formatCount(post.views)
+        like.isChecked = post.likedByMe
 
         like.setOnClickListener { likeClickListener(post) }
         share.setOnClickListener { shareClickListener(post) }
         viewing.setOnClickListener { viewClickListener(post) }
-
         menuButton.setOnClickListener { view ->
             PopupMenu(view.context, view).apply {
                 inflate(R.menu.menu)
@@ -42,17 +38,14 @@ class PostsViewHolder(
                             removeClickListener(post)
                             true
                         }
-
                         R.id.add -> {
                             addClickListener()
                             true
                         }
-
                         R.id.edit -> {
                             editClickListener(post)
                             true
                         }
-
                         else -> false
                     }
                 }
