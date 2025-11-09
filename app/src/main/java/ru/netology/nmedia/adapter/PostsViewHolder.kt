@@ -28,7 +28,6 @@ class PostsViewHolder(
         viewing.text = formatCount(post.views)
         like.isChecked = post.likedByMe
 
-        // Video block visibility and click handling
         if (post.video.isNullOrBlank()) {
             videoContainer.visibility = View.GONE
         } else {

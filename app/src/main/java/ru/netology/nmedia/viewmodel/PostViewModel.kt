@@ -1,13 +1,14 @@
 package ru.netology.nmedia.viewmodel
 
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
 import ru.netology.nmedia.dto.Post
 import ru.netology.nmedia.repository.PostRepository
-import ru.netology.nmedia.repository.PostRepositoryInMemoryImpl
+import ru.netology.nmedia.repository.PostRepositoryFileImpl
 
-class PostViewModel : ViewModel() {
-    private val repository: PostRepository = PostRepositoryInMemoryImpl()
+class PostViewModel(application: Application) : AndroidViewModel(application) {
+    private val repository: PostRepository = PostRepositoryFileImpl(application)
     private val empty = Post(
         id = 0,
         author = "",
@@ -26,7 +27,6 @@ class PostViewModel : ViewModel() {
         edited.value = post
     }
 
-    // Legacy save when inline editing is used
     fun add(content: String) {
         val text = content.trim()
         val current = edited.value ?: empty
@@ -38,7 +38,6 @@ class PostViewModel : ViewModel() {
         edited.value = empty
     }
 
-    // New helpers for external editor Activity
     fun create(content: String) {
         repository.add(Post(id = 0, author = "", content = content.trim(), published = ""))
     }
