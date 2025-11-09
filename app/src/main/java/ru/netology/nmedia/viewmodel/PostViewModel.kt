@@ -16,7 +16,8 @@ class PostViewModel : ViewModel() {
         likes = 0,
         likedByMe = false,
         shares = 0,
-        views = 0
+        views = 0,
+        video = null,
     )
     val edited = MutableLiveData(empty)
     val data = repository.get()
@@ -25,6 +26,7 @@ class PostViewModel : ViewModel() {
         edited.value = post
     }
 
+    // Legacy save when inline editing is used
     fun add(content: String) {
         val text = content.trim()
         val current = edited.value ?: empty
@@ -34,6 +36,15 @@ class PostViewModel : ViewModel() {
             if (current.content != text) repository.updateContentById(current.id, text)
         }
         edited.value = empty
+    }
+
+    // New helpers for external editor Activity
+    fun create(content: String) {
+        repository.add(Post(id = 0, author = "", content = content.trim(), published = ""))
+    }
+
+    fun update(id: Long, content: String) {
+        repository.updateContentById(id, content.trim())
     }
 
     fun like(id: Long) = repository.like(id)

@@ -16,6 +16,7 @@ class PostRepositoryInMemoryImpl : PostRepository {
             likedByMe = false,
             shares = 10,
             views = 99,
+            video = if (it == 0) "https://rutube.ru/video/6550a91e7e523f9503bed47e4c46d0cb" else null,
         )
     }
     private var nextId: Long = (posts.maxOfOrNull { it.id } ?: 0L) + 1L

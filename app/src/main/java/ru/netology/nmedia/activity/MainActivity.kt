@@ -1,9 +1,11 @@
 package ru.netology.nmedia.activity
 
+import android.app.Activity
+import android.content.Intent
 import android.os.Bundle
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
-import android.view.inputmethod.EditorInfo
 import ru.netology.nmedia.adapter.PostsAdapter
 import ru.netology.nmedia.databinding.ActivityMainBinding
 import ru.netology.nmedia.viewmodel.PostViewModel
@@ -11,6 +13,19 @@ import ru.netology.nmedia.viewmodel.PostViewModel
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private val viewModel: PostViewModel by viewModels()
+
+    private val editorLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val data = result.data
+            val content = data?.getStringExtra(NewPostActivity.RESULT_KEY_TEXT)?.trim().orEmpty()
+            val id = data?.getLongExtra(NewPostActivity.RESULT_KEY_ID, 0L) ?: 0L
+            if (content.isNotBlank()) {
+                if (id == 0L) viewModel.create(content) else viewModel.update(id, content)
+            }
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -23,10 +38,10 @@ class MainActivity : AppCompatActivity() {
             viewClickListener = { viewModel.view(it.id) },
             removeClickListener = { viewModel.remove(it.id) },
             editClickListener = { post ->
-                binding.input.requestFocus()
-                binding.input.setText(post.content)
-                binding.input.setSelection(binding.input.text?.length ?: 0)
-                viewModel.edit(post)
+                val intent = Intent(this, NewPostActivity::class.java)
+                    .putExtra(NewPostActivity.EXTRA_ID, post.id)
+                    .putExtra(NewPostActivity.EXTRA_TEXT, post.content)
+                editorLauncher.launch(intent)
             }
         )
 
@@ -36,26 +51,9 @@ class MainActivity : AppCompatActivity() {
             adapter.submitList(posts)
         }
 
-        val submitInput: () -> Unit = {
-            val text = binding.input.text?.toString().orEmpty().trim()
-            if (text.isNotEmpty()) {
-                viewModel.add(text)
-                binding.input.setText("")
-                binding.input.clearFocus()
-            }
-        }
-
-        binding.input.setOnEditorActionListener { _, actionId, _ ->
-            if (actionId == EditorInfo.IME_ACTION_SEND || actionId == EditorInfo.IME_ACTION_DONE) {
-                submitInput(); true
-            } else false
-        }
-
-        binding.fabAdd.setOnClickListener { submitInput() }
-        binding.btnCancel.setOnClickListener {
-            viewModel.cancelEdit()
-            binding.input.setText("")
-            binding.input.clearFocus()
+        binding.fabAdd.setOnClickListener {
+            val intent = Intent(this, NewPostActivity::class.java)
+            editorLauncher.launch(intent)
         }
     }
 }

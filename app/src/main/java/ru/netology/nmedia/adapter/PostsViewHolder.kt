@@ -1,5 +1,8 @@
 package ru.netology.nmedia.adapter
 
+import android.content.Intent
+import android.net.Uri
+import android.view.View
 import android.widget.PopupMenu
 import androidx.recyclerview.widget.RecyclerView
 import ru.netology.nmedia.R
@@ -24,6 +27,19 @@ class PostsViewHolder(
         share.text = formatCount(post.shares)
         viewing.text = formatCount(post.views)
         like.isChecked = post.likedByMe
+
+        // Video block visibility and click handling
+        if (post.video.isNullOrBlank()) {
+            videoContainer.visibility = View.GONE
+        } else {
+            videoContainer.visibility = View.VISIBLE
+            val openVideo: (View) -> Unit = {
+                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(post.video))
+                itemView.context.startActivity(intent)
+            }
+            videoPreview.setOnClickListener(openVideo)
+            play.setOnClickListener(openVideo)
+        }
 
         like.setOnClickListener { likeClickListener(post) }
         share.setOnClickListener { shareClickListener(post) }
