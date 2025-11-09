@@ -7,4 +7,6 @@
     <string name="add_menu">Add</string>
     <string name="delete_menu">Delete</string>
     <string name="edit_menu">Edit</string>
+    <string name="cancel">Cancel</string>
+    <string name="write_text">Write text</string>
 </resources>

@@ -13,7 +13,6 @@ class PostsViewHolder(
     private val shareClickListener: ShareClickListener,
     private val viewClickListener: ViewClickListener,
     private val removeClickListener: RemoveClickListener,
-    private val addClickListener: AddClickListener,
     private val editClickListener: EditClickListener,
 ) : RecyclerView.ViewHolder(binding.root) {
 
@@ -36,10 +35,6 @@ class PostsViewHolder(
                     when (item.itemId) {
                         R.id.delete -> {
                             removeClickListener(post)
-                            true
-                        }
-                        R.id.add -> {
-                            addClickListener()
                             true
                         }
                         R.id.edit -> {

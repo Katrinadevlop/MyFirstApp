@@ -8,4 +8,6 @@
     <string name="add_menu">Добавить</string>
     <string name="delete_menu">Удалить</string>
     <string name="edit_menu">Изменить</string>
+    <string name="cancel">Отмена</string>
+    <string name="write_text">Введите текст</string>
 </resources>

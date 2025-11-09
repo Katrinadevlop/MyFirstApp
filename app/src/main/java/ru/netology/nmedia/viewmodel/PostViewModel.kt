@@ -40,4 +40,8 @@ class PostViewModel : ViewModel() {
     fun share(id: Long) = repository.share(id)
     fun view(id: Long) = repository.view(id)
     fun remove(id: Long) = repository.remove(id)
+
+    fun cancelEdit() {
+        edited.value = empty
+    }
 }

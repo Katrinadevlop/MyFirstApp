@@ -22,14 +22,6 @@ class MainActivity : AppCompatActivity() {
             shareClickListener = { viewModel.share(it.id) },
             viewClickListener = { viewModel.view(it.id) },
             removeClickListener = { viewModel.remove(it.id) },
-            addClickListener = {
-                val text = binding.input.text?.toString().orEmpty().trim()
-                if (text.isNotEmpty()) {
-                    viewModel.add(text)
-                    binding.input.setText("")
-
-                }
-            },
             editClickListener = { post ->
                 binding.input.requestFocus()
                 binding.input.setText(post.content)
@@ -44,15 +36,26 @@ class MainActivity : AppCompatActivity() {
             adapter.submitList(posts)
         }
 
+        val submitInput: () -> Unit = {
+            val text = binding.input.text?.toString().orEmpty().trim()
+            if (text.isNotEmpty()) {
+                viewModel.add(text)
+                binding.input.setText("")
+                binding.input.clearFocus()
+            }
+        }
+
         binding.input.setOnEditorActionListener { _, actionId, _ ->
             if (actionId == EditorInfo.IME_ACTION_SEND || actionId == EditorInfo.IME_ACTION_DONE) {
-                val text = binding.input.text?.toString().orEmpty().trim()
-                if (text.isNotEmpty()) {
-                    viewModel.add(text)
-                    binding.input.setText("")
-                }
-                true
+                submitInput(); true
             } else false
+        }
+
+        binding.fabAdd.setOnClickListener { submitInput() }
+        binding.btnCancel.setOnClickListener {
+            viewModel.cancelEdit()
+            binding.input.setText("")
+            binding.input.clearFocus()
         }
     }
 }
