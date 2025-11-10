@@ -15,6 +15,8 @@ class App : Application() {
     override fun onCreate() {
         super.onCreate()
 
+        createNotificationChannels()
+
         val db = AppDb.get(this)
         val dao = db.postDao()
 
@@ -25,6 +27,20 @@ class App : Application() {
                     dao.insert(initial.map(PostEntity.Companion::fromDto))
                 }
             }
+        }
+    }
+
+    private fun createNotificationChannels() {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            val channel = android.app.NotificationChannel(
+                CHANNEL_ID,
+                "Remote",
+                android.app.NotificationManager.IMPORTANCE_DEFAULT
+            ).apply {
+                description = "Remote notifications"
+            }
+            val manager = getSystemService(android.app.NotificationManager::class.java)
+            manager.createNotificationChannel(channel)
         }
     }
 
@@ -52,6 +68,7 @@ class App : Application() {
     }
 
     companion object {
+        const val CHANNEL_ID = "remote"
         private const val FILE_NAME = "posts.json"
     }
 }
