@@ -10,8 +10,9 @@ import ru.netology.nmedia.dto.Post
 typealias LikeClickListener = (post: Post) -> Unit
 typealias ShareClickListener = (post: Post) -> Unit
 typealias ViewClickListener = (post: Post) -> Unit
-typealias RemoveClickListener = (post:Post) -> Unit
-typealias EditClickListener = (post:Post) -> Unit
+typealias RemoveClickListener = (post: Post) -> Unit
+typealias EditClickListener = (post: Post) -> Unit
+typealias PostClickListener = (post: Post) -> Unit
 
 class PostsAdapter(
     private val likeClickListener: LikeClickListener,
@@ -19,6 +20,7 @@ class PostsAdapter(
     private val viewClickListener: ViewClickListener,
     private val removeClickListener: RemoveClickListener,
     private val editClickListener: EditClickListener,
+    private val postClickListener: PostClickListener,
 ) : ListAdapter<Post, PostsViewHolder>(PostDiffCallback()) {
 
     override fun onCreateViewHolder(
@@ -26,7 +28,15 @@ class PostsAdapter(
         viewType: Int,
     ): PostsViewHolder {
         val binding = CardBinding.inflate(LayoutInflater.from(parent.context), parent, false)
-        return PostsViewHolder(binding, likeClickListener, shareClickListener, viewClickListener, removeClickListener, editClickListener)
+        return PostsViewHolder(
+            binding = binding,
+            likeClickListener = likeClickListener,
+            shareClickListener = shareClickListener,
+            viewClickListener = viewClickListener,
+            removeClickListener = removeClickListener,
+            editClickListener = editClickListener,
+            postClickListener = postClickListener,
+        )
     }
 
     override fun onBindViewHolder(

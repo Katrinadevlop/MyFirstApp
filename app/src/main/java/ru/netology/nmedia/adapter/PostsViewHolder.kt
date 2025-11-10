@@ -17,6 +17,7 @@ class PostsViewHolder(
     private val viewClickListener: ViewClickListener,
     private val removeClickListener: RemoveClickListener,
     private val editClickListener: EditClickListener,
+    private val postClickListener: PostClickListener,
 ) : RecyclerView.ViewHolder(binding.root) {
 
     fun bind(post: Post) = with(binding) {
@@ -27,6 +28,9 @@ class PostsViewHolder(
         share.text = formatCount(post.shares)
         viewing.text = formatCount(post.views)
         like.isChecked = post.likedByMe
+
+        // Навигация в детали — только по клику на корень
+        root.setOnClickListener { postClickListener(post) }
 
         if (post.video.isNullOrBlank()) {
             videoContainer.visibility = View.GONE
