@@ -36,7 +36,6 @@ class PostFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // observe and bind
         viewModel.data.observe(viewLifecycleOwner) { posts ->
             val post = posts.firstOrNull { it.id == postId } ?: return@observe
             with(binding.post) {
@@ -58,7 +57,6 @@ class PostFragment : Fragment() {
                 } else {
                     videoContainer.visibility = View.VISIBLE
                     val openVideo: (View) -> Unit = {
-                        // Use ACTION_VIEW to open in external app
                         startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(post.video)))
                     }
                     videoPreview.setOnClickListener(openVideo)
