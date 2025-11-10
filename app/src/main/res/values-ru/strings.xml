@@ -11,4 +11,7 @@
     <string name="cancel">Отмена</string>
     <string name="save">Сохранить</string>
     <string name="write_text">Введите текст</string>
+    <!-- Lint: MissingTranslation fix -->
+    <string name="open_in_editor">Открыть в редакторе</string>
+    <string name="delete_post">Удалить</string>
 </resources>
