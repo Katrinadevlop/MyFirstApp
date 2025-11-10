@@ -4,16 +4,22 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.activity.addCallback
 import androidx.core.os.bundleOf
+import androidx.core.widget.doOnTextChanged
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import androidx.fragment.app.viewModels
+import androidx.lifecycle.observe
 import ru.netology.nmedia.databinding.FragmentEditPostBinding
+import ru.netology.nmedia.viewmodel.DraftViewModel
 import ru.netology.nmedia.viewmodel.PostViewModel
 
 class EditPostFragment : Fragment() {
     private var _binding: FragmentEditPostBinding? = null
     private val binding get() = _binding!!
-    private val viewModel: PostViewModel by activityViewModels()
+    private val postViewModel: PostViewModel by activityViewModels()
+    private val draftViewModel: DraftViewModel by viewModels()
 
     private var postId: Long = 0L
     private var initialText: String = ""
@@ -37,19 +43,47 @@ class EditPostFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        binding.input.setText(initialText)
-        if (initialText.isNotEmpty()) {
-            binding.input.setSelection(initialText.length)
+
+        if (postId == 0L) {
+            draftViewModel.draft.observe(viewLifecycleOwner) { content ->
+                val current = binding.input.text?.toString().orEmpty()
+                if (current != content) {
+                    binding.input.setText(content)
+                    binding.input.setSelection(binding.input.text?.length ?: 0)
+                }
+            }
+            binding.input.doOnTextChanged { text, _, _, _ ->
+                draftViewModel.onContentChanged(text?.toString().orEmpty())
+            }
+        } else {
+            binding.input.setText(initialText)
+            if (initialText.isNotEmpty()) {
+                binding.input.setSelection(initialText.length)
+            }
         }
+
         binding.btnSave.setOnClickListener {
             val content = binding.input.text?.toString().orEmpty().trim()
             if (content.isNotBlank()) {
-                if (postId == 0L) viewModel.create(content) else viewModel.update(postId, content)
+                if (postId == 0L) {
+                    postViewModel.create(content)
+                    draftViewModel.clear()
+                } else {
+                    postViewModel.update(postId, content)
+                }
             }
             parentFragmentManager.popBackStack()
         }
         binding.btnCancel.setOnClickListener {
             parentFragmentManager.popBackStack()
+        }
+
+        requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner) {
+            if (postId == 0L) {
+                draftViewModel.saveNow(binding.input.text?.toString().orEmpty())
+            }
+            isEnabled = false
+            requireActivity().onBackPressedDispatcher.onBackPressed()
         }
     }
 

@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
+    id("org.jetbrains.kotlin.kapt")
 }
 
 android {
@@ -39,6 +40,7 @@ android {
 }
 
 dependencies {
+    val room = "2.7.0"
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
@@ -53,6 +55,10 @@ dependencies {
     implementation("androidx.recyclerview:recyclerview:1.3.2")
     implementation("com.google.code.gson:gson:2.11.0")
     implementation(libs.generativeai)
+
+    implementation("androidx.room:room-runtime:$room")
+    implementation("androidx.room:room-ktx:$room")
+    kapt("androidx.room:room-compiler:$room")
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
