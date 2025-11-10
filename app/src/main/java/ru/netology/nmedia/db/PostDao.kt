@@ -8,8 +8,14 @@ interface PostDao {
     @Query("SELECT * FROM posts ORDER BY id DESC")
     fun getAll(): LiveData<List<PostEntity>>
 
+    @Query("SELECT COUNT(*) FROM posts")
+    suspend fun count(): Int
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(entity: PostEntity): Long
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insert(entities: List<PostEntity>)
 
     @Update
     suspend fun update(entity: PostEntity)
