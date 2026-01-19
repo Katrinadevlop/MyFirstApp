@@ -5,6 +5,7 @@ import android.net.Uri
 import android.view.View
 import android.widget.PopupMenu
 import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide
 import ru.netology.nmedia.R
 import ru.netology.nmedia.databinding.CardBinding
 import ru.netology.nmedia.dto.Post
@@ -28,6 +29,15 @@ class PostsViewHolder(
         share.text = formatCount(post.shares)
         viewing.text = formatCount(post.views)
         like.isChecked = post.likedByMe
+
+        // Load avatar with Glide
+        val avatarUrl = "http://10.0.2.2:9999/avatars/${post.authorAvatar}"
+        Glide.with(itemView.context)
+            .load(avatarUrl)
+            .placeholder(R.drawable.netology)
+            .error(R.drawable.netology)
+            .timeout(60000)
+            .into(avatarImage)
 
         root.setOnClickListener { postClickListener(post) }
 
