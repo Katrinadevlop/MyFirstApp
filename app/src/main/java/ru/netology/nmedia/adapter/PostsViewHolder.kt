@@ -40,6 +40,20 @@ class PostsViewHolder(
             .timeout(60000)
             .into(avatarImage)
 
+        // Load attachment image if available
+        if (post.attachment != null && post.attachment.type == "IMAGE") {
+            attachmentImage.visibility = View.VISIBLE
+            val attachmentUrl = "http://10.0.2.2:9999/images/${post.attachment.url}"
+            Glide.with(itemView.context)
+                .load(attachmentUrl)
+                .placeholder(R.drawable.netology)
+                .error(R.drawable.netology)
+                .timeout(60000)
+                .into(attachmentImage)
+        } else {
+            attachmentImage.visibility = View.GONE
+        }
+
         root.setOnClickListener { postClickListener(post) }
 
         if (post.video.isNullOrBlank()) {
