@@ -8,6 +8,9 @@ interface PostDao {
     @Query("SELECT * FROM posts ORDER BY id DESC")
     fun getAll(): LiveData<List<PostEntity>>
 
+    @Query("SELECT * FROM posts WHERE id = :id")
+    suspend fun getById(id: Long): PostEntity?
+
     @Query("SELECT COUNT(*) FROM posts")
     suspend fun count(): Int
 

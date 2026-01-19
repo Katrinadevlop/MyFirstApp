@@ -11,4 +11,5 @@ interface PostRepository {
     fun remove(id: Long)
     fun add(post: Post)
     fun updateContentById(id: Long, content: String)
+    fun refresh(callback: () -> Unit = {})
 }

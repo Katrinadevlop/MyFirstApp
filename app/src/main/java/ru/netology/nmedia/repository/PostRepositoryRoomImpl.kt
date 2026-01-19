@@ -52,4 +52,9 @@ class PostRepositoryRoomImpl(application: Application) : PostRepository {
     override fun updateContentById(id: Long, content: String) {
         ioScope.launch { dao.updateContentById(id, content) }
     }
+
+    override fun refresh(callback: () -> Unit) {
+        // Room implementation doesn't need network refresh
+        callback()
+    }
 }

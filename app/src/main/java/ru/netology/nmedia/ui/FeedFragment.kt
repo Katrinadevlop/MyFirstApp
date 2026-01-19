@@ -58,6 +58,12 @@ class FeedFragment : Fragment() {
             adapter.submitList(posts)
         }
 
+        binding.swipeRefresh.setOnRefreshListener {
+            viewModel.refresh {
+                binding.swipeRefresh.isRefreshing = false
+            }
+        }
+
         binding.fabAdd.setOnClickListener {
             parentFragmentManager.beginTransaction()
                 .setReorderingAllowed(true)
