@@ -66,6 +66,9 @@ dependencies {
     // SwipeRefreshLayout
     implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
 
+    // Glide for image loading
+    implementation("com.github.bumptech.glide:glide:4.16.0")
+
     implementation("androidx.room:room-runtime:$room")
     implementation("androidx.room:room-ktx:$room")
     kapt("androidx.room:room-compiler:$room")
