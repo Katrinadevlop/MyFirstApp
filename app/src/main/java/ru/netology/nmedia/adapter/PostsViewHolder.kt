@@ -30,10 +30,11 @@ class PostsViewHolder(
         viewing.text = formatCount(post.views)
         like.isChecked = post.likedByMe
 
-        // Load avatar with Glide
+        // Load avatar with Glide with circular transformation
         val avatarUrl = "http://10.0.2.2:9999/avatars/${post.authorAvatar}"
         Glide.with(itemView.context)
             .load(avatarUrl)
+            .circleCrop()
             .placeholder(R.drawable.netology)
             .error(R.drawable.netology)
             .timeout(60000)
