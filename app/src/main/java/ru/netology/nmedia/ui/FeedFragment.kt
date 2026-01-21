@@ -4,9 +4,11 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.google.android.material.snackbar.Snackbar
 import ru.netology.nmedia.R
 import ru.netology.nmedia.adapter.PostsAdapter
 import ru.netology.nmedia.databinding.FragmentFeedBinding
@@ -56,6 +58,25 @@ class FeedFragment : Fragment() {
 
         viewModel.data.observe(viewLifecycleOwner) { posts ->
             adapter.submitList(posts)
+        }
+
+        viewModel.feedState.observe(viewLifecycleOwner) { state ->
+            binding.progress.isVisible = state.loading
+            binding.errorGroup.isVisible = state.error
+            binding.swipeRefresh.isRefreshing = false
+            
+            // Показываем Snackbar при ошибке если есть данные (ошибка при операции)
+            if (state.error && (viewModel.data.value?.isNotEmpty() == true)) {
+                Snackbar.make(binding.root, R.string.error_loading, Snackbar.LENGTH_LONG)
+                    .setAction(R.string.retry) {
+                        viewModel.loadPosts()
+                    }
+                    .show()
+            }
+        }
+
+        binding.retryButton.setOnClickListener {
+            viewModel.loadPosts()
         }
 
         binding.swipeRefresh.setOnRefreshListener {

@@ -28,14 +28,12 @@ class PostRepositoryHybridImpl(application: Application) : PostRepository {
         _data.addSource(roomData) { entities ->
             _data.value = entities.map { it.toDto() }
         }
-
-        // Загружаем данные с сервера при инициализации
-        refresh()
+        // Не вызываем refresh в init, так как ViewModel сам вызовет loadPosts()
     }
 
     override fun get(): LiveData<List<Post>> = _data
 
-    override fun like(id: Long) {
+    override fun like(id: Long, onError: (Exception) -> Unit) {
         ioScope.launch {
             try {
                 // Сначала обновляем локально для быстрого отклика
@@ -59,10 +57,14 @@ class PostRepositoryHybridImpl(application: Application) : PostRepository {
                             // Обновляем БД данными с сервера
                             dao.insert(PostEntity.fromDto(updatedPost))
                         }
+                    } else {
+                        dao.likeById(id) // Откатываем
+                        onError(RuntimeException("Ошибка сервера: ${response.code()}"))
                     }
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Ошибка при лайке", e)
+                onError(e)
             }
         }
     }
@@ -79,21 +81,27 @@ class PostRepositoryHybridImpl(application: Application) : PostRepository {
         }
     }
 
-    override fun remove(id: Long) {
+    override fun remove(id: Long, onError: (Exception) -> Unit) {
         ioScope.launch {
             try {
+                val entity = dao.getById(id)
                 // Удаляем локально
                 dao.removeById(id)
 
                 // Удаляем на сервере
-                apiService.removeById(id)
+                val response = apiService.removeById(id)
+                if (!response.isSuccessful) {
+                    if (entity != null) dao.insert(entity)
+                    onError(RuntimeException("Ошибка сервера: ${response.code()}"))
+                }
             } catch (e: Exception) {
                 Log.e(TAG, "Ошибка при удалении", e)
+                onError(e)
             }
         }
     }
 
-    override fun add(post: Post) {
+    override fun add(post: Post, onError: (Exception) -> Unit) {
         ioScope.launch {
             try {
                 // Сохраняем на сервере
@@ -104,29 +112,20 @@ class PostRepositoryHybridImpl(application: Application) : PostRepository {
                         // Сохраняем в БД с ID от сервера
                         dao.insert(PostEntity.fromDto(savedPost))
                     }
+                } else {
+                    onError(RuntimeException("Ошибка сервера: ${response.code()}"))
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "Ошибка при добавлении, сохраняем только локально", e)
-                // Если сервер недоступен, сохраняем только локально
-                val entity = PostEntity(
-                    id = 0,
-                    author = if (post.author.isBlank()) "Я" else post.author,
-                    content = post.content,
-                    published = if (post.published.isBlank()) "только что" else post.published,
-                    likes = post.likes,
-                    likedByMe = post.likedByMe,
-                    shares = post.shares,
-                    views = post.views,
-                    video = post.video
-                )
-                dao.insert(entity)
+                Log.e(TAG, "Ошибка при добавлении", e)
+                onError(e)
             }
         }
     }
 
-    override fun updateContentById(id: Long, content: String) {
+    override fun updateContentById(id: Long, content: String, onError: (Exception) -> Unit) {
         ioScope.launch {
             try {
+                val oldEntity = dao.getById(id)
                 // Обновляем локально
                 dao.updateContentById(id, content)
 
@@ -142,15 +141,19 @@ class PostRepositoryHybridImpl(application: Application) : PostRepository {
                         if (updatedPost != null) {
                             dao.insert(PostEntity.fromDto(updatedPost))
                         }
+                    } else {
+                        if (oldEntity != null) dao.insert(oldEntity)
+                        onError(RuntimeException("Ошибка сервера: ${response.code()}"))
                     }
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Ошибка при обновлении", e)
+                onError(e)
             }
         }
     }
 
-    override fun refresh(callback: () -> Unit) {
+    override fun refresh(onSuccess: () -> Unit, onError: (Exception) -> Unit) {
         ioScope.launch {
             try {
                 Log.d(TAG, "Загрузка постов с сервера...")
@@ -164,11 +167,13 @@ class PostRepositoryHybridImpl(application: Application) : PostRepository {
                     posts.forEach { post ->
                         dao.insert(PostEntity.fromDto(post))
                     }
+                    onSuccess()
+                } else {
+                    onError(RuntimeException("Ошибка сервера: ${response.code()}"))
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "Ошибка загрузки с сервера, используем локальные данные", e)
-            } finally {
-                callback()
+                Log.e(TAG, "Ошибка загрузки с сервера", e)
+                onError(e)
             }
         }
     }

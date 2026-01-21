@@ -10,4 +10,6 @@
     <string name="cancel">Cancel</string>
     <string name="save">Save</string>
     <string name="write_text">Write text</string>
+    <string name="error_loading">Ошибка загрузки</string>
+    <string name="retry">Повторить</string>
 </resources>

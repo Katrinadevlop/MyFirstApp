@@ -18,7 +18,7 @@ class PostRepositoryRoomImpl(application: Application) : PostRepository {
 
     override fun get(): LiveData<List<Post>> = dao.getAll().map { list -> list.map { it.toDto() } }
 
-    override fun like(id: Long) {
+    override fun like(id: Long, onError: (Exception) -> Unit) {
         ioScope.launch { dao.likeById(id) }
     }
 
@@ -30,11 +30,11 @@ class PostRepositoryRoomImpl(application: Application) : PostRepository {
         ioScope.launch { dao.viewById(id) }
     }
 
-    override fun remove(id: Long) {
+    override fun remove(id: Long, onError: (Exception) -> Unit) {
         ioScope.launch { dao.removeById(id) }
     }
 
-    override fun add(post: Post) {
+    override fun add(post: Post, onError: (Exception) -> Unit) {
         val entity = PostEntity(
             id = 0,
             author = if (post.author.isBlank()) "My" else post.author,
@@ -49,12 +49,12 @@ class PostRepositoryRoomImpl(application: Application) : PostRepository {
         ioScope.launch { dao.insert(entity) }
     }
 
-    override fun updateContentById(id: Long, content: String) {
+    override fun updateContentById(id: Long, content: String, onError: (Exception) -> Unit) {
         ioScope.launch { dao.updateContentById(id, content) }
     }
 
-    override fun refresh(callback: () -> Unit) {
+    override fun refresh(onSuccess: () -> Unit, onError: (Exception) -> Unit) {
         // Room implementation doesn't need network refresh
-        callback()
+        onSuccess()
     }
 }

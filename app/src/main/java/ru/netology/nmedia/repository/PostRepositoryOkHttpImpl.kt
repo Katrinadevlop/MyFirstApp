@@ -41,12 +41,12 @@ class PostRepositoryOkHttpImpl(application: Application) : PostRepository {
         _data.addSource(roomData) { entities ->
             _data.value = entities.map { it.toDto() }
         }
-        refresh()
+        // Не вызываем refresh в init, так как ViewModel сам вызовет loadPosts()
     }
 
     override fun get(): LiveData<List<Post>> = _data
 
-    override fun like(id: Long) {
+    override fun like(id: Long, onError: (Exception) -> Unit) {
         // Сначала обновляем локально для быстрого отклика
         ioScope.launch {
             try {
@@ -73,6 +73,11 @@ class PostRepositoryOkHttpImpl(application: Application) : PostRepository {
                     client.newCall(request).enqueue(object : Callback {
                         override fun onFailure(call: Call, e: IOException) {
                             Log.e(TAG, "Ошибка при лайке", e)
+                            // Откатываем локальное изменение
+                            ioScope.launch {
+                                dao.likeById(id)
+                            }
+                            onError(e)
                         }
 
                         override fun onResponse(call: Call, response: Response) {
@@ -83,12 +88,20 @@ class PostRepositoryOkHttpImpl(application: Application) : PostRepository {
                                         dao.insert(PostEntity.fromDto(updatedPost))
                                     }
                                 }
+                            } else {
+                                Log.e(TAG, "Ошибка сервера при лайке: ${response.code} - ${response.message}")
+                                // Откатываем локальное изменение
+                                ioScope.launch {
+                                    dao.likeById(id)
+                                }
+                                onError(RuntimeException("Ошибка сервера: ${response.code}"))
                             }
                         }
                     })
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Ошибка при лайке", e)
+                onError(e)
             }
         }
     }
@@ -105,9 +118,10 @@ class PostRepositoryOkHttpImpl(application: Application) : PostRepository {
         }
     }
 
-    override fun remove(id: Long) {
+    override fun remove(id: Long, onError: (Exception) -> Unit) {
         ioScope.launch {
             try {
+                val entity = dao.getById(id) // Сохраняем для возможного отката
                 dao.removeById(id)
                 
                 val request = Request.Builder()
@@ -118,21 +132,34 @@ class PostRepositoryOkHttpImpl(application: Application) : PostRepository {
                 client.newCall(request).enqueue(object : Callback {
                     override fun onFailure(call: Call, e: IOException) {
                         Log.e(TAG, "Ошибка при удалении с сервера", e)
+                        // Откатываем локальное удаление
+                        if (entity != null) {
+                            ioScope.launch { dao.insert(entity) }
+                        }
+                        onError(e)
                     }
 
                     override fun onResponse(call: Call, response: Response) {
                         if (response.isSuccessful) {
                             Log.d(TAG, "Пост $id успешно удален с сервера")
+                        } else {
+                            Log.e(TAG, "Ошибка сервера при удалении: ${response.code}")
+                            // Откатываем локальное удаление
+                            if (entity != null) {
+                                ioScope.launch { dao.insert(entity) }
+                            }
+                            onError(RuntimeException("Ошибка сервера: ${response.code}"))
                         }
                     }
                 })
             } catch (e: Exception) {
                 Log.e(TAG, "Ошибка при удалении", e)
+                onError(e)
             }
         }
     }
 
-    override fun add(post: Post) {
+    override fun add(post: Post, onError: (Exception) -> Unit) {
         val json = gson.toJson(post)
         val body = json.toRequestBody(mediaType)
         
@@ -143,21 +170,8 @@ class PostRepositoryOkHttpImpl(application: Application) : PostRepository {
 
         client.newCall(request).enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {
-                Log.e(TAG, "Ошибка при добавлении, сохраняем только локально", e)
-                ioScope.launch {
-                    val entity = PostEntity(
-                        id = 0,
-                        author = if (post.author.isBlank()) "Я" else post.author,
-                        content = post.content,
-                        published = if (post.published.isBlank()) "только что" else post.published,
-                        likes = post.likes,
-                        likedByMe = post.likedByMe,
-                        shares = post.shares,
-                        views = post.views,
-                        video = post.video
-                    )
-                    dao.insert(entity)
-                }
+                Log.e(TAG, "Ошибка при добавлении", e)
+                onError(e)
             }
 
             override fun onResponse(call: Call, response: Response) {
@@ -168,14 +182,18 @@ class PostRepositoryOkHttpImpl(application: Application) : PostRepository {
                             dao.insert(PostEntity.fromDto(savedPost))
                         }
                     }
+                } else {
+                    Log.e(TAG, "Ошибка сервера при добавлении: ${response.code}")
+                    onError(RuntimeException("Ошибка сервера: ${response.code}"))
                 }
             }
         })
     }
 
-    override fun updateContentById(id: Long, content: String) {
+    override fun updateContentById(id: Long, content: String, onError: (Exception) -> Unit) {
         ioScope.launch {
             try {
+                val oldEntity = dao.getById(id) // Сохраняем для отката
                 dao.updateContentById(id, content)
                 
                 val entity = dao.getById(id)
@@ -192,6 +210,11 @@ class PostRepositoryOkHttpImpl(application: Application) : PostRepository {
                     client.newCall(request).enqueue(object : Callback {
                         override fun onFailure(call: Call, e: IOException) {
                             Log.e(TAG, "Ошибка при обновлении на сервере", e)
+                            // Откатываем
+                            if (oldEntity != null) {
+                                ioScope.launch { dao.insert(oldEntity) }
+                            }
+                            onError(e)
                         }
 
                         override fun onResponse(call: Call, response: Response) {
@@ -202,17 +225,25 @@ class PostRepositoryOkHttpImpl(application: Application) : PostRepository {
                                         dao.insert(PostEntity.fromDto(updatedPost))
                                     }
                                 }
+                            } else {
+                                Log.e(TAG, "Ошибка сервера при обновлении: ${response.code}")
+                                // Откатываем
+                                if (oldEntity != null) {
+                                    ioScope.launch { dao.insert(oldEntity) }
+                                }
+                                onError(RuntimeException("Ошибка сервера: ${response.code}"))
                             }
                         }
                     })
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Ошибка при обновлении", e)
+                onError(e)
             }
         }
     }
 
-    override fun refresh(callback: () -> Unit) {
+    override fun refresh(onSuccess: () -> Unit, onError: (Exception) -> Unit) {
         val request = Request.Builder()
             .url("$baseUrl/api/posts")
             .get()
@@ -220,27 +251,27 @@ class PostRepositoryOkHttpImpl(application: Application) : PostRepository {
 
         client.newCall(request).enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {
-                Log.e(TAG, "Ошибка загрузки с сервера, используем локальные данные", e)
-                callback()
+                Log.e(TAG, "Ошибка загрузки с сервера", e)
+                onError(e)
             }
 
             override fun onResponse(call: Call, response: Response) {
-                try {
-                    if (response.isSuccessful) {
-                        response.body?.string()?.let { json ->
-                            val type = object : TypeToken<List<Post>>() {}.type
-                            val posts: List<Post> = gson.fromJson(json, type)
-                            Log.d(TAG, "Получено ${posts.size} постов с сервера")
-                            
-                            ioScope.launch {
-                                posts.forEach { post ->
-                                    dao.insert(PostEntity.fromDto(post))
-                                }
+                if (response.isSuccessful) {
+                    response.body?.string()?.let { json ->
+                        val type = object : TypeToken<List<Post>>() {}.type
+                        val posts: List<Post> = gson.fromJson(json, type)
+                        Log.d(TAG, "Получено ${posts.size} постов с сервера")
+                        
+                        ioScope.launch {
+                            posts.forEach { post ->
+                                dao.insert(PostEntity.fromDto(post))
                             }
                         }
                     }
-                } finally {
-                    callback()
+                    onSuccess()
+                } else {
+                    Log.e(TAG, "Ошибка сервера: ${response.code} - ${response.message}")
+                    onError(RuntimeException("Ошибка сервера: ${response.code}"))
                 }
             }
         })

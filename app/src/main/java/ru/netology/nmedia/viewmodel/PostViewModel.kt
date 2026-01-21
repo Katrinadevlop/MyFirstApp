@@ -1,9 +1,13 @@
 package ru.netology.nmedia.viewmodel
 
 import android.app.Application
+import android.os.Handler
+import android.os.Looper
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import ru.netology.nmedia.dto.Post
+import ru.netology.nmedia.model.FeedModel
 import ru.netology.nmedia.repository.PostRepository
 import ru.netology.nmedia.repository.PostRepositoryOkHttpImpl
 
@@ -20,8 +24,34 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
         views = 0,
         video = null,
     )
+    
+    private val mainHandler = Handler(Looper.getMainLooper())
+    
     val edited = MutableLiveData(empty)
     val data = repository.get()
+    
+    private val _feedState = MutableLiveData(FeedModel())
+    val feedState: LiveData<FeedModel> get() = _feedState
+
+    init {
+        loadPosts()
+    }
+
+    fun loadPosts() {
+        _feedState.value = FeedModel(loading = true)
+        repository.refresh(
+            onSuccess = {
+                mainHandler.post {
+                    _feedState.value = FeedModel()
+                }
+            },
+            onError = { e ->
+                mainHandler.post {
+                    _feedState.value = FeedModel(error = true)
+                }
+            }
+        )
+    }
 
     fun edit(post: Post) {
         edited.value = post
@@ -31,31 +61,77 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
         val text = content.trim()
         val current = edited.value ?: empty
         if (current.id == 0L) {
-            repository.add(current.copy(content = text))
+            repository.add(current.copy(content = text)) { e ->
+                mainHandler.post {
+                    _feedState.value = _feedState.value?.copy(error = true)
+                }
+            }
         } else {
-            if (current.content != text) repository.updateContentById(current.id, text)
+            if (current.content != text) {
+                repository.updateContentById(current.id, text) { e ->
+                    mainHandler.post {
+                        _feedState.value = _feedState.value?.copy(error = true)
+                    }
+                }
+            }
         }
         edited.value = empty
     }
 
     fun create(content: String) {
-        repository.add(Post(id = 0, author = "", content = content.trim(), published = ""))
+        repository.add(Post(id = 0, author = "", content = content.trim(), published = "")) { e ->
+            mainHandler.post {
+                _feedState.value = _feedState.value?.copy(error = true)
+            }
+        }
     }
 
     fun update(id: Long, content: String) {
-        repository.updateContentById(id, content.trim())
+        repository.updateContentById(id, content.trim()) { e ->
+            mainHandler.post {
+                _feedState.value = _feedState.value?.copy(error = true)
+            }
+        }
     }
 
-    fun like(id: Long) = repository.like(id)
+    fun like(id: Long) {
+        repository.like(id) { e ->
+            mainHandler.post {
+                _feedState.value = _feedState.value?.copy(error = true)
+            }
+        }
+    }
+    
     fun share(id: Long) = repository.share(id)
     fun view(id: Long) = repository.view(id)
-    fun remove(id: Long) = repository.remove(id)
+    
+    fun remove(id: Long) {
+        repository.remove(id) { e ->
+            mainHandler.post {
+                _feedState.value = _feedState.value?.copy(error = true)
+            }
+        }
+    }
 
     fun cancelEdit() {
         edited.value = empty
     }
 
     fun refresh(callback: () -> Unit = {}) {
-        repository.refresh(callback)
+        _feedState.value = _feedState.value?.copy(loading = true)
+        repository.refresh(
+            onSuccess = {
+                mainHandler.post {
+                    _feedState.value = FeedModel()
+                    callback()
+                }
+            },
+            onError = { e ->
+                mainHandler.post {
+                    _feedState.value = FeedModel(error = true)
+                    callback()
+                }
+            }
+        )
     }
 }

@@ -17,11 +17,10 @@ class PostRepositoryNetworkImpl : PostRepository {
     private val _posts = MutableLiveData<List<Post>>(emptyList())
     
     override fun get(): LiveData<List<Post>> {
-        refresh {}
         return _posts
     }
 
-    override fun like(id: Long) {
+    override fun like(id: Long, onError: (Exception) -> Unit) {
         ioScope.launch {
             try {
                 // Find the current post to check if it's already liked
@@ -43,9 +42,12 @@ class PostRepositoryNetworkImpl : PostRepository {
                         }
                         _posts.postValue(updatedPosts)
                     }
+                } else {
+                    onError(RuntimeException("Ошибка сервера: ${response.code()}"))
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
+                onError(e)
             }
         }
     }
@@ -78,34 +80,40 @@ class PostRepositoryNetworkImpl : PostRepository {
         }
     }
 
-    override fun remove(id: Long) {
+    override fun remove(id: Long, onError: (Exception) -> Unit) {
         ioScope.launch {
             try {
                 val response = apiService.removeById(id)
                 if (response.isSuccessful) {
                     val currentPosts = _posts.value ?: emptyList()
                     _posts.postValue(currentPosts.filter { it.id != id })
+                } else {
+                    onError(RuntimeException("Ошибка сервера: ${response.code()}"))
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
+                onError(e)
             }
         }
     }
 
-    override fun add(post: Post) {
+    override fun add(post: Post, onError: (Exception) -> Unit) {
         ioScope.launch {
             try {
                 val response = apiService.save(post)
                 if (response.isSuccessful) {
-                    refresh {}
+                    refresh({}, {})
+                } else {
+                    onError(RuntimeException("Ошибка сервера: ${response.code()}"))
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
+                onError(e)
             }
         }
     }
 
-    override fun updateContentById(id: Long, content: String) {
+    override fun updateContentById(id: Long, content: String, onError: (Exception) -> Unit) {
         ioScope.launch {
             try {
                 val currentPosts = _posts.value ?: emptyList()
@@ -114,16 +122,19 @@ class PostRepositoryNetworkImpl : PostRepository {
                     val updatedPost = post.copy(content = content)
                     val response = apiService.save(updatedPost)
                     if (response.isSuccessful) {
-                        refresh {}
+                        refresh({}, {})
+                    } else {
+                        onError(RuntimeException("Ошибка сервера: ${response.code()}"))
                     }
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
+                onError(e)
             }
         }
     }
 
-    override fun refresh(callback: () -> Unit) {
+    override fun refresh(onSuccess: () -> Unit, onError: (Exception) -> Unit) {
         ioScope.launch {
             try {
                 Log.d(TAG, "Запрос постов с сервера...")
@@ -133,14 +144,15 @@ class PostRepositoryNetworkImpl : PostRepository {
                     val posts = response.body() ?: emptyList()
                     Log.d(TAG, "Получено постов: ${posts.size}")
                     _posts.postValue(posts)
+                    onSuccess()
                 } else {
                     Log.e(TAG, "Ошибка: ${response.code()} - ${response.message()}")
+                    onError(RuntimeException("Ошибка сервера: ${response.code()}"))
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Исключение при запросе постов", e)
                 e.printStackTrace()
-            } finally {
-                callback()
+                onError(e)
             }
         }
     }
