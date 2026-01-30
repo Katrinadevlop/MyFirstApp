@@ -1,11 +1,11 @@
 package ru.netology.nmedia.viewmodel
 
 import android.app.Application
-import android.os.Handler
-import android.os.Looper
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.launch
 import ru.netology.nmedia.dto.Post
 import ru.netology.nmedia.model.FeedModel
 import ru.netology.nmedia.repository.PostRepository
@@ -25,8 +25,6 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
         video = null,
     )
     
-    private val mainHandler = Handler(Looper.getMainLooper())
-    
     val edited = MutableLiveData(empty)
     val data = repository.get()
     
@@ -38,27 +36,23 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
     val newerPostsCount: LiveData<Int> get() = _newerPostsCount
     
     private var newerPosts: List<Post> = emptyList()
-    private var backgroundLoadingRunnable: Runnable? = null
 
     init {
         loadPosts()
+        retrySyncUnsavedPosts()
         startBackgroundLoading()
     }
 
     fun loadPosts() {
-        _feedState.value = FeedModel(loading = true)
-        repository.refresh(
-            onSuccess = {
-                mainHandler.post {
-                    _feedState.value = FeedModel()
-                }
-            },
-            onError = { e ->
-                mainHandler.post {
-                    _feedState.value = FeedModel(error = true)
-                }
+        viewModelScope.launch {
+            _feedState.value = FeedModel(loading = true)
+            try {
+                repository.refreshSuspend()
+                _feedState.value = FeedModel()
+            } catch (e: Exception) {
+                _feedState.value = FeedModel(error = true)
             }
-        )
+        }
     }
 
     fun edit(post: Post) {
@@ -68,43 +62,47 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
     fun add(content: String) {
         val text = content.trim()
         val current = edited.value ?: empty
-        if (current.id == 0L) {
-            repository.add(current.copy(content = text)) { e ->
-                mainHandler.post {
-                    _feedState.value = _feedState.value?.copy(error = true)
-                }
-            }
-        } else {
-            if (current.content != text) {
-                repository.updateContentById(current.id, text) { e ->
-                    mainHandler.post {
-                        _feedState.value = _feedState.value?.copy(error = true)
+        viewModelScope.launch {
+            try {
+                if (current.id == 0L) {
+                    repository.addSuspend(current.copy(content = text))
+                } else {
+                    if (current.content != text) {
+                        repository.updateContentByIdSuspend(current.id, text)
                     }
                 }
+            } catch (e: Exception) {
+                _feedState.value = _feedState.value?.copy(error = true)
             }
         }
         edited.value = empty
     }
 
     fun create(content: String) {
-        repository.add(Post(id = 0, author = "", content = content.trim(), published = "")) { e ->
-            mainHandler.post {
+        viewModelScope.launch {
+            try {
+                repository.addSuspend(Post(id = 0, author = "", content = content.trim(), published = ""))
+            } catch (e: Exception) {
                 _feedState.value = _feedState.value?.copy(error = true)
             }
         }
     }
 
     fun update(id: Long, content: String) {
-        repository.updateContentById(id, content.trim()) { e ->
-            mainHandler.post {
+        viewModelScope.launch {
+            try {
+                repository.updateContentByIdSuspend(id, content.trim())
+            } catch (e: Exception) {
                 _feedState.value = _feedState.value?.copy(error = true)
             }
         }
     }
 
     fun like(id: Long) {
-        repository.like(id) { e ->
-            mainHandler.post {
+        viewModelScope.launch {
+            try {
+                repository.likeById(id)
+            } catch (e: Exception) {
                 _feedState.value = _feedState.value?.copy(error = true)
             }
         }
@@ -114,8 +112,10 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
     fun view(id: Long) = repository.view(id)
     
     fun remove(id: Long) {
-        repository.remove(id) { e ->
-            mainHandler.post {
+        viewModelScope.launch {
+            try {
+                repository.removeById(id)
+            } catch (e: Exception) {
                 _feedState.value = _feedState.value?.copy(error = true)
             }
         }
@@ -126,125 +126,71 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun refresh(callback: () -> Unit = {}) {
-        _feedState.value = _feedState.value?.copy(loading = true)
-        repository.refresh(
-            onSuccess = {
-                mainHandler.post {
-                    _feedState.value = FeedModel()
-                    callback()
-                }
-            },
-            onError = { e ->
-                mainHandler.post {
-                    _feedState.value = FeedModel(error = true)
-                    callback()
-                }
+        viewModelScope.launch {
+            _feedState.value = _feedState.value?.copy(loading = true)
+            try {
+                repository.refreshSuspend()
+                _feedState.value = FeedModel()
+            } catch (e: Exception) {
+                _feedState.value = FeedModel(error = true)
+            } finally {
+                callback()
             }
-        )
+        }
     }
 
-    // Новые методы для задания №1
-    fun likeById(id: Long) {
-        Thread {
-            try {
-                // Вызываем suspend-метод репозитория
-                kotlinx.coroutines.runBlocking {
-                    repository.likeById(id)
-                }
-            } catch (e: Exception) {
-                mainHandler.post {
-                    _feedState.value = _feedState.value?.copy(error = true)
-                }
-            }
-        }.start()
-    }
-
-    fun removeById(id: Long) {
-        Thread {
-            try {
-                // Вызываем suspend-метод репозитория
-                kotlinx.coroutines.runBlocking {
-                    repository.removeById(id)
-                }
-            } catch (e: Exception) {
-                mainHandler.post {
-                    _feedState.value = _feedState.value?.copy(error = true)
-                }
-            }
-        }.start()
-    }
 
     // Метод для задания №2: повторная синхронизация несохранённых постов
     fun retrySyncUnsavedPosts() {
-        _feedState.value = _feedState.value?.copy(loading = true)
-        repository.retrySyncUnsavedPosts(
-            onSuccess = {
-                mainHandler.post {
-                    _feedState.value = FeedModel()
-                }
-            },
-            onError = { e ->
-                mainHandler.post {
-                    _feedState.value = FeedModel(error = true)
-                }
+        viewModelScope.launch {
+            try {
+                repository.retrySyncUnsavedPostsSuspend()
+            } catch (e: Exception) {
+                // Тихо игнорируем ошибки синхронизации при старте
+                e.printStackTrace()
             }
-        )
+        }
     }
     
     // Методы для задания №1: фоновая загрузка новых постов
     private fun startBackgroundLoading() {
-        backgroundLoadingRunnable = object : Runnable {
-            override fun run() {
+        viewModelScope.launch {
+            kotlinx.coroutines.delay(10_000) // Начальная задержка
+            while (true) {
                 loadNewerPosts()
-                mainHandler.postDelayed(this, 10_000) // Каждые 10 секунд
+                kotlinx.coroutines.delay(10_000) // Каждые 10 секунд
             }
         }
-        mainHandler.postDelayed(backgroundLoadingRunnable!!, 10_000)
     }
     
     fun loadNewerPosts() {
-        Thread {
+        viewModelScope.launch {
             try {
-                kotlinx.coroutines.runBlocking {
-                    val maxId = repository.getMaxPostId()
-                    val newPosts = repository.getNewer(maxId)
-                    
-                    if (newPosts.isNotEmpty()) {
-                        newerPosts = newPosts
-                        mainHandler.post {
-                            _newerPostsCount.value = newPosts.size
-                        }
-                    }
+                val maxId = repository.getMaxPostId()
+                val newPosts = repository.getNewer(maxId)
+                
+                if (newPosts.isNotEmpty()) {
+                    newerPosts = newPosts
+                    _newerPostsCount.value = newPosts.size
                 }
             } catch (e: Exception) {
                 // Тихо игнорируем ошибки фоновой загрузки
                 e.printStackTrace()
             }
-        }.start()
+        }
     }
     
     fun showNewerPosts() {
-        Thread {
+        viewModelScope.launch {
             try {
-                kotlinx.coroutines.runBlocking {
-                    if (newerPosts.isNotEmpty()) {
-                        repository.saveNewerPosts(newerPosts)
-                        newerPosts = emptyList()
-                        mainHandler.post {
-                            _newerPostsCount.value = 0
-                        }
-                    }
+                if (newerPosts.isNotEmpty()) {
+                    repository.saveNewerPosts(newerPosts)
+                    newerPosts = emptyList()
+                    _newerPostsCount.value = 0
                 }
             } catch (e: Exception) {
-                mainHandler.post {
-                    _feedState.value = _feedState.value?.copy(error = true)
-                }
+                _feedState.value = _feedState.value?.copy(error = true)
             }
-        }.start()
-    }
-    
-    override fun onCleared() {
-        super.onCleared()
-        backgroundLoadingRunnable?.let { mainHandler.removeCallbacks(it) }
+        }
     }
 }
