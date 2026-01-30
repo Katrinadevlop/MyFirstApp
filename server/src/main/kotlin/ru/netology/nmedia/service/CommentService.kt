@@ -3,51 +3,44 @@ package ru.netology.nmedia.service
 import org.springframework.data.domain.Sort
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import org.springframework.data.repository.findByIdOrNull
-import ru.netology.nmedia.dto.Post
-import ru.netology.nmedia.entity.PostEntity
+import ru.netology.nmedia.dto.Comment
+import ru.netology.nmedia.entity.CommentEntity
 import ru.netology.nmedia.exception.NotFoundException
-import ru.netology.nmedia.repository.PostRepository
+import ru.netology.nmedia.repository.CommentRepository
 import java.time.OffsetDateTime
 
 @Service
 @Transactional
-class PostService(
-    private val repository: PostRepository,
-    private val commentService: CommentService,
-) {
-    fun getAll(): List<Post> = repository
-        .findAll(Sort.by(Sort.Direction.DESC, "id"))
+class CommentService(private val repository: CommentRepository) {
+    fun getAllByPostId(postId: Long): List<Comment> = repository
+        .findAllByPostId(postId, Sort.by(Sort.Direction.ASC, "id"))
         .map { it.toDto() }
 
-    fun getById(id: Long): Post = repository
+    fun getById(id: Long): Comment = repository
         .findById(id)
         .map { it.toDto() }
         .orElseThrow(::NotFoundException)
 
-    fun save(dto: Post): Post = repository
+    fun save(dto: Comment): Comment = repository
         .findById(dto.id)
         .orElse(
-            PostEntity.fromDto(
+            CommentEntity.fromDto(
                 dto.copy(
                     likes = 0,
                     likedByMe = false,
-                    published = OffsetDateTime.now().toEpochSecond()
+                    published = OffsetDateTime.now().toEpochSecond(),
                 )
             )
         )
         .let {
             if (it.id == 0L) repository.save(it) else it.content = dto.content
             it
-        }.toDto()
+        }
+        .toDto()
 
-    fun removeById(id: Long) {
-        repository.findByIdOrNull(id)
-            ?.also(repository::delete)
-            ?.also { commentService.removeAllByPostId(id) }
-    }
+    fun removeById(id: Long): Unit = repository.deleteById(id)
 
-    fun likeById(id: Long): Post = repository
+    fun likeById(id: Long): Comment = repository
         .findById(id)
         .orElseThrow(::NotFoundException)
         .apply {
@@ -56,7 +49,7 @@ class PostService(
         }
         .toDto()
 
-    fun unlikeById(id: Long): Post = repository
+    fun unlikeById(id: Long): Comment = repository
         .findById(id)
         .orElseThrow(::NotFoundException)
         .apply {
@@ -64,4 +57,6 @@ class PostService(
             likedByMe = false
         }
         .toDto()
+
+    fun removeAllByPostId(postId: Long): Unit = repository.removeAllByPostId(postId)
 }
