@@ -12,4 +12,11 @@ interface PostRepository {
     fun add(post: Post, onError: (Exception) -> Unit = {})
     fun updateContentById(id: Long, content: String, onError: (Exception) -> Unit = {})
     fun refresh(onSuccess: () -> Unit = {}, onError: (Exception) -> Unit = {})
+    
+    // Новые suspend-методы для задания
+    suspend fun likeById(id: Long)
+    suspend fun removeById(id: Long)
+    
+    // Метод для задания №2: повторная попытка синхронизации
+    fun retrySyncUnsavedPosts(onSuccess: () -> Unit = {}, onError: (Exception) -> Unit = {})
 }

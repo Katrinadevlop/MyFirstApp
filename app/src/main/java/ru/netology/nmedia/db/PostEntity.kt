@@ -19,6 +19,9 @@ data class PostEntity(
     val views: Int,
     val video: String?,
     val attachment: Attachment? = null,
+    // Поля для задания №2: отслеживание статуса синхронизации
+    val isSynced: Boolean = true,  // true - сохранен на сервере, false - только локально
+    val localId: Long? = null,     // Временный локальный ID для несинхронизированных постов
 ) {
     fun toDto() = Post(
         id = id,
@@ -32,6 +35,8 @@ data class PostEntity(
         views = views,
         video = video,
         attachment = attachment,
+        isSynced = isSynced,
+        localId = localId,
     )
 
     companion object {
@@ -47,6 +52,8 @@ data class PostEntity(
             views = post.views,
             video = post.video,
             attachment = post.attachment,
+            isSynced = post.isSynced,
+            localId = post.localId,
         )
     }
 }

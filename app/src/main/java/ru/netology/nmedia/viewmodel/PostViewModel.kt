@@ -134,4 +134,52 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
             }
         )
     }
+
+    // Новые методы для задания №1
+    fun likeById(id: Long) {
+        Thread {
+            try {
+                // Вызываем suspend-метод репозитория
+                kotlinx.coroutines.runBlocking {
+                    repository.likeById(id)
+                }
+            } catch (e: Exception) {
+                mainHandler.post {
+                    _feedState.value = _feedState.value?.copy(error = true)
+                }
+            }
+        }.start()
+    }
+
+    fun removeById(id: Long) {
+        Thread {
+            try {
+                // Вызываем suspend-метод репозитория
+                kotlinx.coroutines.runBlocking {
+                    repository.removeById(id)
+                }
+            } catch (e: Exception) {
+                mainHandler.post {
+                    _feedState.value = _feedState.value?.copy(error = true)
+                }
+            }
+        }.start()
+    }
+
+    // Метод для задания №2: повторная синхронизация несохранённых постов
+    fun retrySyncUnsavedPosts() {
+        _feedState.value = _feedState.value?.copy(loading = true)
+        repository.retrySyncUnsavedPosts(
+            onSuccess = {
+                mainHandler.post {
+                    _feedState.value = FeedModel()
+                }
+            },
+            onError = { e ->
+                mainHandler.post {
+                    _feedState.value = FeedModel(error = true)
+                }
+            }
+        )
+    }
 }

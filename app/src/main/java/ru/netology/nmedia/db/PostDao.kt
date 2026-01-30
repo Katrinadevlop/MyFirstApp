@@ -37,4 +37,8 @@ interface PostDao {
 
     @Query("DELETE FROM posts WHERE id = :id")
     suspend fun removeById(id: Long)
+    
+    // Для задания №2: получение несинхронизированных постов
+    @Query("SELECT * FROM posts WHERE isSynced = 0")
+    suspend fun getUnsyncedPosts(): List<PostEntity>
 }

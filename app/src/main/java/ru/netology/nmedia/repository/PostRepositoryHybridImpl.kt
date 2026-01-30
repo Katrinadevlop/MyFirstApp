@@ -104,16 +104,37 @@ class PostRepositoryHybridImpl(application: Application) : PostRepository {
     override fun add(post: Post, onError: (Exception) -> Unit) {
         ioScope.launch {
             try {
-                // Сохраняем на сервере
-                val response = apiService.save(post)
-                if (response.isSuccessful) {
-                    val savedPost = response.body()
-                    if (savedPost != null) {
-                        // Сохраняем в БД с ID от сервера
-                        dao.insert(PostEntity.fromDto(savedPost))
+                // Задание №2: Оптимистичное сохранение
+                // 1. Сначала сохраняем в локальную БД с временным ID
+                val localId = System.currentTimeMillis() // Используем timestamp как уникальный локальный ID
+                val localPost = post.copy(
+                    id = 0, // Room сам присвоит autoGenerate ID
+                    isSynced = false,
+                    localId = localId
+                )
+                val generatedId = dao.insert(PostEntity.fromDto(localPost))
+
+                try {
+                    // 2. Затем отправляем на сервер
+                    val response = apiService.save(post)
+                    if (response.isSuccessful) {
+                        val savedPost = response.body()
+                        if (savedPost != null) {
+                            // 3. Удаляем локальную версию и сохраняем с ID от сервера
+                            dao.removeById(generatedId)
+                            dao.insert(PostEntity.fromDto(savedPost.copy(
+                                isSynced = true,
+                                localId = null
+                            )))
+                        }
+                    } else {
+                        // Оставляем пост с флагом isSynced = false
+                        onError(RuntimeException("Ошибка сервера: ${response.code()}"))
                     }
-                } else {
-                    onError(RuntimeException("Ошибка сервера: ${response.code()}"))
+                } catch (e: Exception) {
+                    // Оставляем пост с флагом isSynced = false
+                    Log.e(TAG, "Ошибка при сохранении на сервере", e)
+                    onError(e)
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Ошибка при добавлении", e)
@@ -173,6 +194,136 @@ class PostRepositoryHybridImpl(application: Application) : PostRepository {
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Ошибка загрузки с сервера", e)
+                onError(e)
+            }
+        }
+    }
+
+    // Новые suspend-методы для задания №1
+    override suspend fun likeById(id: Long) {
+        try {
+            // 1. Сначала модифицируем запись в локальной БД для быстрого отклика
+            val entityBefore = dao.getById(id)
+            dao.likeById(id)
+
+            // Получаем обновленный пост из БД
+            val entity = dao.getById(id)
+            if (entity != null) {
+                val post = entity.toDto()
+                
+                try {
+                    // 2. Затем отправляем запрос в API
+                    val response = if (post.likedByMe) {
+                        apiService.likeById(id)
+                    } else {
+                        apiService.unlikeById(id)
+                    }
+
+                    if (response.isSuccessful) {
+                        val updatedPost = response.body()
+                        if (updatedPost != null) {
+                            // Обновляем БД данными с сервера
+                            dao.insert(PostEntity.fromDto(updatedPost))
+                        }
+                    } else {
+                        // Откатываем изменения в БД при ошибке
+                        if (entityBefore != null) {
+                            dao.insert(entityBefore)
+                        }
+                        throw RuntimeException("Ошибка сервера: ${response.code()}")
+                    }
+                } catch (e: Exception) {
+                    // Откатываем изменения в БД при ошибке сети
+                    if (entityBefore != null) {
+                        dao.insert(entityBefore)
+                    }
+                    Log.e(TAG, "Ошибка при лайке (API)", e)
+                    throw e
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Ошибка при лайке", e)
+            throw e
+        }
+    }
+
+    override suspend fun removeById(id: Long) {
+        try {
+            // 1. Сначала сохраняем пост и удаляем из локальной БД
+            val entity = dao.getById(id)
+            dao.removeById(id)
+
+            try {
+                // 2. Затем отправляем запрос на удаление в API
+                val response = apiService.removeById(id)
+                if (!response.isSuccessful) {
+                    // Восстанавливаем пост в БД при ошибке
+                    if (entity != null) {
+                        dao.insert(entity)
+                    }
+                    throw RuntimeException("Ошибка сервера: ${response.code()}")
+                }
+            } catch (e: Exception) {
+                // Восстанавливаем пост в БД при ошибке сети
+                if (entity != null) {
+                    dao.insert(entity)
+                }
+                Log.e(TAG, "Ошибка при удалении (API)", e)
+                throw e
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Ошибка при удалении", e)
+            throw e
+        }
+    }
+
+    // Метод для задания №2: повторная попытка синхронизации несохранённых постов
+    override fun retrySyncUnsavedPosts(onSuccess: () -> Unit, onError: (Exception) -> Unit) {
+        ioScope.launch {
+            try {
+                val unsyncedPosts = dao.getUnsyncedPosts()
+                Log.d(TAG, "Найдено ${unsyncedPosts.size} несинхронизированных постов")
+                
+                var allSuccess = true
+                for (entity in unsyncedPosts) {
+                    try {
+                        val post = entity.toDto()
+                        // Отправляем пост на сервер (без isSynced и localId)
+                        val postToSave = post.copy(
+                            id = 0,
+                            isSynced = true,
+                            localId = null
+                        )
+                        val response = apiService.save(postToSave)
+                        
+                        if (response.isSuccessful) {
+                            val savedPost = response.body()
+                            if (savedPost != null) {
+                                // Удаляем локальную версию и сохраняем с ID от сервера
+                                dao.removeById(entity.id)
+                                dao.insert(PostEntity.fromDto(savedPost.copy(
+                                    isSynced = true,
+                                    localId = null
+                                )))
+                                Log.d(TAG, "Пост ${entity.id} успешно синхронизирован")
+                            }
+                        } else {
+                            allSuccess = false
+                            Log.e(TAG, "Ошибка синхронизации поста ${entity.id}: ${response.code()}")
+                        }
+                    } catch (e: Exception) {
+                        allSuccess = false
+                        Log.e(TAG, "Ошибка при синхронизации поста ${entity.id}", e)
+                    }
+                }
+                
+                if (allSuccess) {
+                    onSuccess()
+                } else {
+                    onError(RuntimeException("Не все посты удалось синхронизировать"))
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Ошибка при повторной синхронизации", e)
                 onError(e)
             }
         }

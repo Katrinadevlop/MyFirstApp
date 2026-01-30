@@ -12,6 +12,9 @@ data class Post (
     val views: Int = 0,
     val video: String? = null,
     val attachment: Attachment? = null,
+    // Поля для задания №2
+    val isSynced: Boolean = true,
+    val localId: Long? = null,
 )
 
 data class Attachment(
