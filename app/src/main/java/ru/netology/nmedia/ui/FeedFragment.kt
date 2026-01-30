@@ -50,6 +50,13 @@ class FeedFragment : Fragment() {
                     .replace(R.id.container, PostFragment.newInstance(post.id))
                     .addToBackStack(null)
                     .commit()
+            },
+            attachmentClickListener = { imageUrl ->
+                parentFragmentManager.beginTransaction()
+                    .setReorderingAllowed(true)
+                    .replace(R.id.container, PhotoFragment.newInstance(imageUrl))
+                    .addToBackStack(null)
+                    .commit()
             }
         )
 

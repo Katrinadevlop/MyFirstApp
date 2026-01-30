@@ -8,6 +8,7 @@ import android.widget.PopupMenu
 import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import com.bumptech.glide.Glide
 import ru.netology.nmedia.R
 import ru.netology.nmedia.databinding.FragmentPostBinding
 import ru.netology.nmedia.viewmodel.PostViewModel
@@ -47,6 +48,38 @@ class PostFragment : Fragment() {
                 like.text = post.likes.toString()
                 share.text = post.shares.toString()
                 viewing.text = post.views.toString()
+
+                // Load avatar with Glide
+                val avatarUrl = "http://10.0.2.2:9999/avatars/${post.authorAvatar}"
+                Glide.with(requireContext())
+                    .load(avatarUrl)
+                    .circleCrop()
+                    .placeholder(R.drawable.netology)
+                    .error(R.drawable.netology)
+                    .timeout(60000)
+                    .into(avatarImage)
+
+                // Load attachment image if available
+                if (post.attachment != null && post.attachment.type == "IMAGE") {
+                    attachmentImage.visibility = View.VISIBLE
+                    val attachmentUrl = "http://10.0.2.2:9999/media/${post.attachment.url}"
+                    Glide.with(requireContext())
+                        .load(attachmentUrl)
+                        .placeholder(R.drawable.netology)
+                        .error(R.drawable.netology)
+                        .timeout(60000)
+                        .into(attachmentImage)
+                    
+                    attachmentImage.setOnClickListener {
+                        parentFragmentManager.beginTransaction()
+                            .setReorderingAllowed(true)
+                            .replace(R.id.container, PhotoFragment.newInstance(attachmentUrl))
+                            .addToBackStack(null)
+                            .commit()
+                    }
+                } else {
+                    attachmentImage.visibility = View.GONE
+                }
 
                 like.setOnClickListener { viewModel.like(post.id) }
                 share.setOnClickListener { viewModel.share(post.id) }

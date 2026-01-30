@@ -19,6 +19,7 @@ class PostsViewHolder(
     private val removeClickListener: RemoveClickListener,
     private val editClickListener: EditClickListener,
     private val postClickListener: PostClickListener,
+    private val attachmentClickListener: AttachmentClickListener,
 ) : RecyclerView.ViewHolder(binding.root) {
 
     fun bind(post: Post) = with(binding) {
@@ -43,13 +44,17 @@ class PostsViewHolder(
         // Load attachment image if available
         if (post.attachment != null && post.attachment.type == "IMAGE") {
             attachmentImage.visibility = View.VISIBLE
-            val attachmentUrl = "http://10.0.2.2:9999/images/${post.attachment.url}"
+            val attachmentUrl = "http://10.0.2.2:9999/media/${post.attachment.url}"
             Glide.with(itemView.context)
                 .load(attachmentUrl)
                 .placeholder(R.drawable.netology)
                 .error(R.drawable.netology)
                 .timeout(60000)
                 .into(attachmentImage)
+            
+            attachmentImage.setOnClickListener {
+                attachmentClickListener(attachmentUrl)
+            }
         } else {
             attachmentImage.visibility = View.GONE
         }

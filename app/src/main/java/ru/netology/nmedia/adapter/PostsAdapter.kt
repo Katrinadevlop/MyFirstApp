@@ -13,6 +13,7 @@ typealias ViewClickListener = (post: Post) -> Unit
 typealias RemoveClickListener = (post: Post) -> Unit
 typealias EditClickListener = (post: Post) -> Unit
 typealias PostClickListener = (post: Post) -> Unit
+typealias AttachmentClickListener = (imageUrl: String) -> Unit
 
 class PostsAdapter(
     private val likeClickListener: LikeClickListener,
@@ -21,6 +22,7 @@ class PostsAdapter(
     private val removeClickListener: RemoveClickListener,
     private val editClickListener: EditClickListener,
     private val postClickListener: PostClickListener,
+    private val attachmentClickListener: AttachmentClickListener,
 ) : ListAdapter<Post, PostsViewHolder>(PostDiffCallback()) {
 
     override fun onCreateViewHolder(
@@ -36,6 +38,7 @@ class PostsAdapter(
             removeClickListener = removeClickListener,
             editClickListener = editClickListener,
             postClickListener = postClickListener,
+            attachmentClickListener = attachmentClickListener,
         )
     }
 
