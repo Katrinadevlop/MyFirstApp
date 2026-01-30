@@ -329,6 +329,42 @@ class PostRepositoryHybridImpl(application: Application) : PostRepository {
         }
     }
 
+    // Методы для задания №1: загрузка новых постов
+    override suspend fun getNewer(currentMaxId: Long): List<Post> {
+        try {
+            Log.d(TAG, "Запрос новых постов новее ID $currentMaxId")
+            val response = apiService.getNewer(currentMaxId)
+            
+            if (response.isSuccessful) {
+                val posts = response.body() ?: emptyList()
+                Log.d(TAG, "Получено ${posts.size} новых постов")
+                return posts
+            } else {
+                Log.e(TAG, "Ошибка сервера: ${response.code()}")
+                throw RuntimeException("Ошибка сервера: ${response.code()}")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Ошибка при загрузке новых постов", e)
+            throw e
+        }
+    }
+
+    override suspend fun getMaxPostId(): Long {
+        return dao.getMaxId() ?: 0L
+    }
+
+    override suspend fun saveNewerPosts(posts: List<Post>) {
+        try {
+            Log.d(TAG, "Сохранение ${posts.size} новых постов в БД")
+            posts.forEach { post ->
+                dao.insert(PostEntity.fromDto(post))
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Ошибка при сохранении новых постов", e)
+            throw e
+        }
+    }
+
     companion object {
         private const val TAG = "PostRepositoryHybrid"
     }

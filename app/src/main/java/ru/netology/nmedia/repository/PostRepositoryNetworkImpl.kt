@@ -157,6 +157,29 @@ class PostRepositoryNetworkImpl : PostRepository {
         }
     }
 
+    // Методы для задания №1 (заглушки, т.к. Network-only репозиторий)
+    override suspend fun getNewer(currentMaxId: Long): List<Post> {
+        return try {
+            val response = apiService.getNewer(currentMaxId)
+            if (response.isSuccessful) {
+                response.body() ?: emptyList()
+            } else {
+                emptyList()
+            }
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+
+    override suspend fun getMaxPostId(): Long {
+        return _posts.value?.maxOfOrNull { it.id } ?: 0L
+    }
+
+    override suspend fun saveNewerPosts(posts: List<Post>) {
+        val currentPosts = _posts.value ?: emptyList()
+        _posts.postValue(posts + currentPosts)
+    }
+
     companion object {
         private const val TAG = "PostRepositoryNetwork"
     }

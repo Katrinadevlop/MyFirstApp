@@ -14,4 +14,6 @@
     <!-- Lint: MissingTranslation fix -->
     <string name="open_in_editor">Открыть в редакторе</string>
     <string name="delete_post">Удалить</string>
+    <string name="new_posts_available">Новые посты доступны</string>
+    <string name="show_new_posts">Показать</string>
 </resources>

@@ -74,6 +74,26 @@ class FeedFragment : Fragment() {
                     .show()
             }
         }
+        
+        // Задание №1: обработка новых постов
+        var currentSnackbar: Snackbar? = null
+        viewModel.newerPostsCount.observe(viewLifecycleOwner) { count ->
+            currentSnackbar?.dismiss()
+            
+            if (count > 0) {
+                currentSnackbar = Snackbar.make(
+                    binding.root,
+                    R.string.new_posts_available,
+                    Snackbar.LENGTH_INDEFINITE
+                ).setAction(R.string.show_new_posts) {
+                    viewModel.showNewerPosts()
+                    binding.list.smoothScrollToPosition(0)
+                }
+                currentSnackbar?.show()
+            } else {
+                currentSnackbar = null
+            }
+        }
 
         binding.retryButton.setOnClickListener {
             viewModel.loadPosts()

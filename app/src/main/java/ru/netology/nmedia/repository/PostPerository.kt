@@ -19,4 +19,9 @@ interface PostRepository {
     
     // Метод для задания №2: повторная попытка синхронизации
     fun retrySyncUnsavedPosts(onSuccess: () -> Unit = {}, onError: (Exception) -> Unit = {})
+    
+    // Методы для задания №1: загрузка новых постов
+    suspend fun getNewer(currentMaxId: Long): List<Post>
+    suspend fun getMaxPostId(): Long
+    suspend fun saveNewerPosts(posts: List<Post>)
 }

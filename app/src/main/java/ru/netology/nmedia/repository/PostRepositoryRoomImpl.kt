@@ -57,4 +57,13 @@ class PostRepositoryRoomImpl(application: Application) : PostRepository {
         // Room implementation doesn't need network refresh
         onSuccess()
     }
+    
+    // Методы для задания №1 (заглушки, т.к. Room-only репозиторий)
+    override suspend fun getNewer(currentMaxId: Long): List<Post> = emptyList()
+    
+    override suspend fun getMaxPostId(): Long = dao.getMaxId() ?: 0L
+    
+    override suspend fun saveNewerPosts(posts: List<Post>) {
+        posts.forEach { dao.insert(PostEntity.fromDto(it)) }
+    }
 }

@@ -32,9 +32,17 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
     
     private val _feedState = MutableLiveData(FeedModel())
     val feedState: LiveData<FeedModel> get() = _feedState
+    
+    // Для задания №1: управление новыми постами
+    private val _newerPostsCount = MutableLiveData(0)
+    val newerPostsCount: LiveData<Int> get() = _newerPostsCount
+    
+    private var newerPosts: List<Post> = emptyList()
+    private var backgroundLoadingRunnable: Runnable? = null
 
     init {
         loadPosts()
+        startBackgroundLoading()
     }
 
     fun loadPosts() {
@@ -181,5 +189,62 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
                 }
             }
         )
+    }
+    
+    // Методы для задания №1: фоновая загрузка новых постов
+    private fun startBackgroundLoading() {
+        backgroundLoadingRunnable = object : Runnable {
+            override fun run() {
+                loadNewerPosts()
+                mainHandler.postDelayed(this, 10_000) // Каждые 10 секунд
+            }
+        }
+        mainHandler.postDelayed(backgroundLoadingRunnable!!, 10_000)
+    }
+    
+    fun loadNewerPosts() {
+        Thread {
+            try {
+                kotlinx.coroutines.runBlocking {
+                    val maxId = repository.getMaxPostId()
+                    val newPosts = repository.getNewer(maxId)
+                    
+                    if (newPosts.isNotEmpty()) {
+                        newerPosts = newPosts
+                        mainHandler.post {
+                            _newerPostsCount.value = newPosts.size
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                // Тихо игнорируем ошибки фоновой загрузки
+                e.printStackTrace()
+            }
+        }.start()
+    }
+    
+    fun showNewerPosts() {
+        Thread {
+            try {
+                kotlinx.coroutines.runBlocking {
+                    if (newerPosts.isNotEmpty()) {
+                        repository.saveNewerPosts(newerPosts)
+                        newerPosts = emptyList()
+                        mainHandler.post {
+                            _newerPostsCount.value = 0
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                mainHandler.post {
+                    _feedState.value = _feedState.value?.copy(error = true)
+                }
+            }
+        }.start()
+    }
+    
+    override fun onCleared() {
+        super.onCleared()
+        backgroundLoadingRunnable?.let { mainHandler.removeCallbacks(it) }
     }
 }

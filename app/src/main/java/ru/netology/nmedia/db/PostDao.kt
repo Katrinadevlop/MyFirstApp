@@ -14,6 +14,9 @@ interface PostDao {
     @Query("SELECT COUNT(*) FROM posts")
     suspend fun count(): Int
 
+    @Query("SELECT MAX(id) FROM posts")
+    suspend fun getMaxId(): Long?
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(entity: PostEntity): Long
 
