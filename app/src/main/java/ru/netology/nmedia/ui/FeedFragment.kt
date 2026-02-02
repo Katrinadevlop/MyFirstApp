@@ -9,6 +9,7 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import ru.netology.nmedia.R
@@ -87,16 +88,29 @@ class FeedFragment : Fragment(), SignInRequiredDialog.SignInRequiredListener {
             }
         }
         
-        // Задание №1: обработка новых постов
+        // Задание №1: обработка новых постов через Snackbar
+        var currentSnackbar: Snackbar? = null
         viewLifecycleOwner.lifecycleScope.launch {
             viewModel.newerPostsCount.collectLatest { count ->
-                binding.newPostsBanner.isVisible = count > 0
+                if (count == 0) {
+                    currentSnackbar?.dismiss()
+                    currentSnackbar = null
+                } else if (currentSnackbar == null) {
+                    // Показываем вновь только если был сброс
+                    currentSnackbar = Snackbar.make(
+                        binding.root,
+                        R.string.new_posts_available,
+                        Snackbar.LENGTH_INDEFINITE
+                    ).setAnchorView(binding.fabAdd)
+                        .setAction(R.string.show_new_posts) {
+                            viewModel.showNewerPosts()
+                            binding.list.post {
+                                binding.list.smoothScrollToPosition(0)
+                            }
+                        }
+                    currentSnackbar?.show()
+                }
             }
-        }
-        
-        binding.newPostsBanner.setOnClickListener {
-            viewModel.showNewerPosts()
-            binding.list.smoothScrollToPosition(0)
         }
         
         // Задание №2: обработка несинхронизированных постов

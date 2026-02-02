@@ -6,19 +6,6 @@
     android:layout_height="match_parent">
 
     <com.google.android.material.button.MaterialButton
-        android:id="@+id/newPostsBanner"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:text="@string/new_posts_available"
-        android:visibility="gone"
-        app:icon="@android:drawable/ic_menu_rotate"
-        app:iconGravity="textStart"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        android:layout_margin="8dp"/>
-
-    <com.google.android.material.button.MaterialButton
         android:id="@+id/unsyncedPostsBanner"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
@@ -29,7 +16,7 @@
         style="@style/Widget.Material3.Button.TonalButton"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/newPostsBanner"
+        app:layout_constraintTop_toTopOf="parent"
         android:layout_margin="8dp"/>
 
     <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
