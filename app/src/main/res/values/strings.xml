@@ -14,4 +14,30 @@
     <string name="retry">Повторить</string>
     <string name="new_posts_available">Новые посты</string>
     <string name="show_new_posts">Показать</string>
+    <string name="unsynced_posts_available">Есть несохранённые посты. Нажмите для синхронизации</string>
+    <string name="add_photo">Добавить фото</string>
+    <string name="remove_photo">Удалить фото</string>
+    <string name="photo_preview">Предпросмотр фото</string>
+    
+    <!-- Auth strings -->
+    <string name="sign_in">Войти</string>
+    <string name="sign_out">Выйти</string>
+    <string name="sign_up">Зарегистрироваться</string>
+    <string name="sign_in_title">Вход</string>
+    <string name="sign_up_title">Регистрация</string>
+    <string name="hint_login">Логин</string>
+    <string name="hint_password">Пароль</string>
+    <string name="hint_name">Имя</string>
+    <string name="hint_confirm_password">Подтверждение пароля</string>
+    <string name="add_avatar">Добавить аватар</string>
+    <string name="remove_avatar">Удалить аватар</string>
+    <string name="avatar_preview">Предпросмотр аватара</string>
+    
+    <!-- Dialog strings -->
+    <string name="sign_in_required_title">Требуется вход</string>
+    <string name="sign_in_required_message">Для выполнения этого действия необходимо войти в аккаунт. Войти сейчас?</string>
+    <string name="sign_out_confirm_title">Подтверждение выхода</string>
+    <string name="sign_out_confirm_message">Вы уверены, что хотите выйти? Несохранённые изменения будут потеряны.</string>
+    <string name="yes">Да</string>
+    <string name="no">Нет</string>
 </resources>

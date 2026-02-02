@@ -4,6 +4,7 @@ import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import ru.netology.nmedia.auth.AppAuth
 import java.util.concurrent.TimeUnit
 
 object RetrofitClient {
@@ -13,8 +14,19 @@ object RetrofitClient {
         level = HttpLoggingInterceptor.Level.BODY
     }
 
+    // Interceptor для добавления токена в заголовок Authorization
+    private val authInterceptor = okhttp3.Interceptor { chain ->
+        val request = AppAuth.authState.value.token?.let { token ->
+            chain.request().newBuilder()
+                .addHeader("Authorization", token)
+                .build()
+        } ?: chain.request()
+        chain.proceed(request)
+    }
+
     private val client = OkHttpClient.Builder()
         .addInterceptor(loggingInterceptor)
+        .addInterceptor(authInterceptor)
         .connectTimeout(30, TimeUnit.SECONDS)
         .readTimeout(30, TimeUnit.SECONDS)
         .writeTimeout(30, TimeUnit.SECONDS)

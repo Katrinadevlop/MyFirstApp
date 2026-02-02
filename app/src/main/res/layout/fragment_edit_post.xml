@@ -15,6 +15,47 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/photoContainer"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/input">
+
+        <ImageView
+            android:id="@+id/photoPreview"
+            android:layout_width="0dp"
+            android:layout_height="200dp"
+            android:scaleType="centerCrop"
+            android:contentDescription="@string/photo_preview"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnRemovePhoto"
+            style="@style/Widget.Material3.Button.IconButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:contentDescription="@string/remove_photo"
+            app:icon="@android:drawable/ic_menu_close_clear_cancel"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnAddPhoto"
+        style="@style/Widget.Material3.Button.IconButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:contentDescription="@string/add_photo"
+        app:icon="@android:drawable/ic_menu_camera"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/photoContainer" />
+
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnSave"
         style="@style/Widget.MaterialComponents.Button.TextButton"
@@ -22,7 +63,7 @@
         android:layout_height="wrap_content"
         android:text="@string/save"
         app:layout_constraintEnd_toStartOf="@+id/btnCancel"
-        app:layout_constraintTop_toBottomOf="@id/input" />
+        app:layout_constraintTop_toBottomOf="@id/photoContainer" />
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnCancel"
@@ -31,6 +72,6 @@
         android:layout_height="wrap_content"
         android:text="@string/cancel"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/input" />
+        app:layout_constraintTop_toBottomOf="@id/photoContainer" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

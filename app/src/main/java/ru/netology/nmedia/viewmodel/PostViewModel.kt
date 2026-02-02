@@ -2,12 +2,14 @@ package ru.netology.nmedia.viewmodel
 
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import ru.netology.nmedia.dto.Post
 import ru.netology.nmedia.model.FeedModel
+import ru.netology.nmedia.model.PhotoModel
 import ru.netology.nmedia.repository.PostRepository
 import ru.netology.nmedia.repository.PostRepositoryHybridImpl
 
@@ -25,15 +27,24 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
         video = null,
     )
     
-    val edited = MutableLiveData(empty)
-    val data = repository.get()
+    private val _edited = MutableStateFlow(empty)
+    val edited: StateFlow<Post> = _edited.asStateFlow()
     
-    private val _feedState = MutableLiveData(FeedModel())
-    val feedState: LiveData<FeedModel> get() = _feedState
+    private val _photo = MutableStateFlow<PhotoModel?>(null)
+    val photo: StateFlow<PhotoModel?> = _photo.asStateFlow()
+    
+    val data = repository.data
+    
+    private val _feedState = MutableStateFlow(FeedModel())
+    val feedState: StateFlow<FeedModel> = _feedState.asStateFlow()
     
     // Для задания №1: управление новыми постами
-    private val _newerPostsCount = MutableLiveData(0)
-    val newerPostsCount: LiveData<Int> get() = _newerPostsCount
+    private val _newerPostsCount = MutableStateFlow(0)
+    val newerPostsCount: StateFlow<Int> = _newerPostsCount.asStateFlow()
+    
+    // Для задания №2: отслеживание несинхронизированных постов
+    private val _unsyncedPostsCount = MutableStateFlow(0)
+    val unsyncedPostsCount: StateFlow<Int> = _unsyncedPostsCount.asStateFlow()
     
     private var newerPosts: List<Post> = emptyList()
 
@@ -41,13 +52,14 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
         loadPosts()
         retrySyncUnsavedPosts()
         startBackgroundLoading()
+        updateUnsyncedPostsCount()
     }
 
     fun loadPosts() {
         viewModelScope.launch {
             _feedState.value = FeedModel(loading = true)
             try {
-                repository.refreshSuspend()
+                repository.refresh()
                 _feedState.value = FeedModel()
             } catch (e: Exception) {
                 _feedState.value = FeedModel(error = true)
@@ -56,34 +68,36 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun edit(post: Post) {
-        edited.value = post
+        _edited.value = post
     }
 
     fun add(content: String) {
         val text = content.trim()
-        val current = edited.value ?: empty
+        val current = _edited.value
         viewModelScope.launch {
             try {
                 if (current.id == 0L) {
-                    repository.addSuspend(current.copy(content = text))
+                    repository.add(current.copy(content = text))
                 } else {
                     if (current.content != text) {
-                        repository.updateContentByIdSuspend(current.id, text)
+                        repository.updateContentById(current.id, text)
                     }
                 }
             } catch (e: Exception) {
-                _feedState.value = _feedState.value?.copy(error = true)
+                _feedState.value = _feedState.value.copy(error = true)
             }
         }
-        edited.value = empty
+        _edited.value = empty
     }
 
     fun create(content: String) {
         viewModelScope.launch {
             try {
-                repository.addSuspend(Post(id = 0, author = "", content = content.trim(), published = ""))
+                repository.add(Post(id = 0, author = "", content = content.trim(), published = ""))
+                updateUnsyncedPostsCount()
             } catch (e: Exception) {
-                _feedState.value = _feedState.value?.copy(error = true)
+                _feedState.value = _feedState.value.copy(error = true)
+                updateUnsyncedPostsCount()
             }
         }
     }
@@ -91,9 +105,9 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
     fun update(id: Long, content: String) {
         viewModelScope.launch {
             try {
-                repository.updateContentByIdSuspend(id, content.trim())
+                repository.updateContentById(id, content.trim())
             } catch (e: Exception) {
-                _feedState.value = _feedState.value?.copy(error = true)
+                _feedState.value = _feedState.value.copy(error = true)
             }
         }
     }
@@ -103,33 +117,51 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
             try {
                 repository.likeById(id)
             } catch (e: Exception) {
-                _feedState.value = _feedState.value?.copy(error = true)
+                _feedState.value = _feedState.value.copy(error = true)
             }
         }
     }
     
-    fun share(id: Long) = repository.share(id)
-    fun view(id: Long) = repository.view(id)
+    fun share(id: Long) {
+        viewModelScope.launch {
+            repository.share(id)
+        }
+    }
+    
+    fun view(id: Long) {
+        viewModelScope.launch {
+            repository.view(id)
+        }
+    }
     
     fun remove(id: Long) {
         viewModelScope.launch {
             try {
                 repository.removeById(id)
             } catch (e: Exception) {
-                _feedState.value = _feedState.value?.copy(error = true)
+                _feedState.value = _feedState.value.copy(error = true)
             }
         }
     }
 
     fun cancelEdit() {
-        edited.value = empty
+        _edited.value = empty
+        _photo.value = null
+    }
+    
+    fun setPhoto(photoModel: PhotoModel?) {
+        _photo.value = photoModel
+    }
+    
+    fun clearPhoto() {
+        _photo.value = null
     }
 
     fun refresh(callback: () -> Unit = {}) {
         viewModelScope.launch {
-            _feedState.value = _feedState.value?.copy(loading = true)
+            _feedState.value = _feedState.value.copy(loading = true)
             try {
-                repository.refreshSuspend()
+                repository.refresh()
                 _feedState.value = FeedModel()
             } catch (e: Exception) {
                 _feedState.value = FeedModel(error = true)
@@ -143,10 +175,23 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
     // Метод для задания №2: повторная синхронизация несохранённых постов
     fun retrySyncUnsavedPosts() {
         viewModelScope.launch {
+            _feedState.value = _feedState.value.copy(loading = true)
             try {
-                repository.retrySyncUnsavedPostsSuspend()
+                repository.retrySyncUnsavedPosts()
+                updateUnsyncedPostsCount()
+                _feedState.value = FeedModel()
             } catch (e: Exception) {
-                // Тихо игнорируем ошибки синхронизации при старте
+                _feedState.value = _feedState.value.copy(error = true)
+                e.printStackTrace()
+            }
+        }
+    }
+    
+    private fun updateUnsyncedPostsCount() {
+        viewModelScope.launch {
+            try {
+                _unsyncedPostsCount.value = repository.getUnsyncedPostsCount()
+            } catch (e: Exception) {
                 e.printStackTrace()
             }
         }
@@ -189,7 +234,7 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
                     _newerPostsCount.value = 0
                 }
             } catch (e: Exception) {
-                _feedState.value = _feedState.value?.copy(error = true)
+                _feedState.value = _feedState.value.copy(error = true)
             }
         }
     }

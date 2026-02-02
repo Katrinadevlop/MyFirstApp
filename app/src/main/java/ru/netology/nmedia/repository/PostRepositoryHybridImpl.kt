@@ -2,12 +2,8 @@ package ru.netology.nmedia.repository
 
 import android.app.Application
 import android.util.Log
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MediatorLiveData
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import ru.netology.nmedia.api.RetrofitClient
 import ru.netology.nmedia.db.AppDb
 import ru.netology.nmedia.db.PostEntity
@@ -17,32 +13,16 @@ class PostRepositoryHybridImpl(application: Application) : PostRepository {
     private val db = AppDb.get(application)
     private val dao = db.postDao()
     private val apiService = RetrofitClient.postApiService
-    private val ioScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
-    // Используем MediatorLiveData для объединения данных из Room и сети
-    private val _data = MediatorLiveData<List<Post>>()
+    override val data: Flow<List<Post>> = dao.getAll()
+        .map { entities -> entities.map { it.toDto() } }
 
-    init {
-        // Наблюдаем за изменениями в Room
-        val roomData = dao.getAll()
-        _data.addSource(roomData) { entities ->
-            _data.value = entities.map { it.toDto() }
-        }
-        // Не вызываем refresh в init, так как ViewModel сам вызовет loadPosts()
+    override suspend fun share(id: Long) {
+        dao.shareById(id)
     }
 
-    override fun get(): LiveData<List<Post>> = _data
-
-    override fun share(id: Long) {
-        ioScope.launch { 
-            dao.shareById(id) 
-        }
-    }
-
-    override fun view(id: Long) {
-        ioScope.launch { 
-            dao.viewById(id) 
-        }
+    override suspend fun view(id: Long) {
+        dao.viewById(id)
     }
 
     override suspend fun likeById(id: Long) {
@@ -126,8 +106,7 @@ class PostRepositoryHybridImpl(application: Application) : PostRepository {
         }
     }
 
-    // Suspend-методы
-    override suspend fun addSuspend(post: Post) {
+    override suspend fun add(post: Post) {
         try {
             // Задание №2: Оптимистичное сохранение
             // Используем отрицательный ID для локальных постов
@@ -167,7 +146,7 @@ class PostRepositoryHybridImpl(application: Application) : PostRepository {
         }
     }
 
-    override suspend fun updateContentByIdSuspend(id: Long, content: String) {
+    override suspend fun updateContentById(id: Long, content: String) {
         // Не разрешаем редактирование несинхронизированных постов
         val entity = dao.getById(id)
         if (entity != null && !entity.isSynced) {
@@ -199,7 +178,7 @@ class PostRepositoryHybridImpl(application: Application) : PostRepository {
         }
     }
 
-    override suspend fun refreshSuspend() {
+    override suspend fun refresh() {
         try {
             Log.d(TAG, "Загрузка постов с сервера...")
             val response = apiService.getAll()
@@ -220,7 +199,11 @@ class PostRepositoryHybridImpl(application: Application) : PostRepository {
         }
     }
 
-    override suspend fun retrySyncUnsavedPostsSuspend() {
+    override suspend fun getUnsyncedPostsCount(): Int {
+        return dao.getUnsyncedPosts().size
+    }
+
+    override suspend fun retrySyncUnsavedPosts() {
         try {
             val unsyncedPosts = dao.getUnsyncedPosts()
             Log.d(TAG, "Найдено ${unsyncedPosts.size} несинхронизированных постов")

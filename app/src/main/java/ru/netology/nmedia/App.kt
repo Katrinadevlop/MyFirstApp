@@ -6,6 +6,7 @@ import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import ru.netology.nmedia.auth.AppAuth
 import ru.netology.nmedia.db.AppDb
 import ru.netology.nmedia.db.PostEntity
 import ru.netology.nmedia.dto.Post
@@ -15,6 +16,7 @@ class App : Application() {
     override fun onCreate() {
         super.onCreate()
 
+        AppAuth.init(this)
         createNotificationChannels()
 
         val db = AppDb.get(this)

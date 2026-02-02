@@ -7,14 +7,18 @@ import android.view.ViewGroup
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.google.android.material.snackbar.Snackbar
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 import ru.netology.nmedia.R
 import ru.netology.nmedia.adapter.PostsAdapter
+import ru.netology.nmedia.auth.AppAuth
 import ru.netology.nmedia.databinding.FragmentFeedBinding
+import ru.netology.nmedia.dialog.SignInRequiredDialog
 import ru.netology.nmedia.viewmodel.PostViewModel
 
-class FeedFragment : Fragment() {
+class FeedFragment : Fragment(), SignInRequiredDialog.SignInRequiredListener {
     private var _binding: FragmentFeedBinding? = null
     private val binding get() = _binding!!
 
@@ -33,7 +37,13 @@ class FeedFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         val adapter = PostsAdapter(
-            likeClickListener = { viewModel.like(it.id) },
+            likeClickListener = { post ->
+                if (AppAuth.isAuthenticated()) {
+                    viewModel.like(post.id)
+                } else {
+                    SignInRequiredDialog().show(childFragmentManager, SignInRequiredDialog.TAG)
+                }
+            },
             shareClickListener = { viewModel.share(it.id) },
             viewClickListener = { viewModel.view(it.id) },
             removeClickListener = { viewModel.remove(it.id) },
@@ -63,43 +73,41 @@ class FeedFragment : Fragment() {
         binding.list.layoutManager = LinearLayoutManager(requireContext())
         binding.list.adapter = adapter
 
-        viewModel.data.observe(viewLifecycleOwner) { posts ->
-            adapter.submitList(posts)
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewModel.data.collectLatest { posts ->
+                adapter.submitList(posts)
+            }
         }
 
-        viewModel.feedState.observe(viewLifecycleOwner) { state ->
-            binding.progress.isVisible = state.loading
-            binding.errorGroup.isVisible = state.error
-            binding.swipeRefresh.isRefreshing = false
-            
-            // Показываем Snackbar при ошибке если есть данные (ошибка при операции)
-            if (state.error && (viewModel.data.value?.isNotEmpty() == true)) {
-                Snackbar.make(binding.root, R.string.error_loading, Snackbar.LENGTH_LONG)
-                    .setAction(R.string.retry) {
-                        viewModel.loadPosts()
-                    }
-                    .show()
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewModel.feedState.collectLatest { state ->
+                binding.progress.isVisible = state.loading
+                binding.errorGroup.isVisible = state.error
+                binding.swipeRefresh.isRefreshing = false
             }
         }
         
         // Задание №1: обработка новых постов
-        var currentSnackbar: Snackbar? = null
-        viewModel.newerPostsCount.observe(viewLifecycleOwner) { count ->
-            currentSnackbar?.dismiss()
-            
-            if (count > 0) {
-                currentSnackbar = Snackbar.make(
-                    binding.root,
-                    R.string.new_posts_available,
-                    Snackbar.LENGTH_INDEFINITE
-                ).setAction(R.string.show_new_posts) {
-                    viewModel.showNewerPosts()
-                    binding.list.smoothScrollToPosition(0)
-                }
-                currentSnackbar?.show()
-            } else {
-                currentSnackbar = null
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewModel.newerPostsCount.collectLatest { count ->
+                binding.newPostsBanner.isVisible = count > 0
             }
+        }
+        
+        binding.newPostsBanner.setOnClickListener {
+            viewModel.showNewerPosts()
+            binding.list.smoothScrollToPosition(0)
+        }
+        
+        // Задание №2: обработка несинхронизированных постов
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewModel.unsyncedPostsCount.collectLatest { count ->
+                binding.unsyncedPostsBanner.isVisible = count > 0
+            }
+        }
+        
+        binding.unsyncedPostsBanner.setOnClickListener {
+            viewModel.retrySyncUnsavedPosts()
         }
 
         binding.retryButton.setOnClickListener {
@@ -113,12 +121,24 @@ class FeedFragment : Fragment() {
         }
 
         binding.fabAdd.setOnClickListener {
-            parentFragmentManager.beginTransaction()
-                .setReorderingAllowed(true)
-                .replace(R.id.container, EditPostFragment.newInstance(0L, ""))
-                .addToBackStack(null)
-                .commit()
+            if (AppAuth.isAuthenticated()) {
+                parentFragmentManager.beginTransaction()
+                    .setReorderingAllowed(true)
+                    .replace(R.id.container, EditPostFragment.newInstance(0L, ""))
+                    .addToBackStack(null)
+                    .commit()
+            } else {
+                SignInRequiredDialog().show(childFragmentManager, SignInRequiredDialog.TAG)
+            }
         }
+    }
+
+    override fun onSignInRequested() {
+        parentFragmentManager.beginTransaction()
+            .setReorderingAllowed(true)
+            .replace(R.id.container, SignInFragment())
+            .addToBackStack(null)
+            .commit()
     }
 
     override fun onDestroyView() {

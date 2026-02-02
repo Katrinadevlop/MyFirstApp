@@ -8,7 +8,10 @@ import android.widget.PopupMenu
 import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.lifecycleScope
 import com.bumptech.glide.Glide
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 import ru.netology.nmedia.R
 import ru.netology.nmedia.databinding.FragmentPostBinding
 import ru.netology.nmedia.viewmodel.PostViewModel
@@ -37,8 +40,9 @@ class PostFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        viewModel.data.observe(viewLifecycleOwner) { posts ->
-            val post = posts.firstOrNull { it.id == postId } ?: return@observe
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewModel.data.collectLatest { posts ->
+                val post = posts.firstOrNull { it.id == postId } ?: return@collectLatest
             with(binding.post) {
                 titleText.text = post.author
                 dateText.text = post.published
@@ -119,6 +123,7 @@ class PostFragment : Fragment() {
                         }
                     }.show()
                 }
+            }
             }
         }
     }

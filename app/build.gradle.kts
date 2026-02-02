@@ -71,6 +71,9 @@ dependencies {
 
     // Glide for image loading
     implementation("com.github.bumptech.glide:glide:4.16.0")
+    
+    // ImagePicker
+    implementation("com.github.dhaval2404:imagepicker:2.1")
 
     implementation("androidx.room:room-runtime:$room")
     implementation("androidx.room:room-ktx:$room")

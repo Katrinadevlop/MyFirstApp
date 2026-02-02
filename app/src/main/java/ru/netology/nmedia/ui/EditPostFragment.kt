@@ -1,21 +1,38 @@
 package ru.netology.nmedia.ui
 
+import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
+import android.view.Menu
+import android.view.MenuInflater
+import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import androidx.activity.addCallback
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.os.bundleOf
+import androidx.core.view.MenuProvider
+import androidx.core.view.isVisible
 import androidx.core.widget.doOnTextChanged
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
-import androidx.lifecycle.observe
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import com.github.dhaval2404.imagepicker.ImagePicker
+import com.bumptech.glide.Glide
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
+import ru.netology.nmedia.R
+import ru.netology.nmedia.auth.AppAuth
 import ru.netology.nmedia.databinding.FragmentEditPostBinding
+import ru.netology.nmedia.dialog.ConfirmSignOutDialog
+import ru.netology.nmedia.model.PhotoModel
 import ru.netology.nmedia.viewmodel.DraftViewModel
 import ru.netology.nmedia.viewmodel.PostViewModel
+import java.io.File
 
-class EditPostFragment : Fragment() {
+class EditPostFragment : Fragment(), ConfirmSignOutDialog.ConfirmSignOutListener {
     private var _binding: FragmentEditPostBinding? = null
     private val binding get() = _binding!!
     private val postViewModel: PostViewModel by activityViewModels()
@@ -23,6 +40,21 @@ class EditPostFragment : Fragment() {
 
     private var postId: Long = 0L
     private var initialText: String = ""
+    
+    private val pickPhotoLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == android.app.Activity.RESULT_OK) {
+            val uri: Uri? = result.data?.data
+            uri?.let {
+                val file = File(requireContext().cacheDir, "photo_${System.currentTimeMillis()}.jpg")
+                requireContext().contentResolver.openInputStream(uri)?.use { input ->
+                    file.outputStream().use { output ->
+                        input.copyTo(output)
+                    }
+                }
+                postViewModel.setPhoto(PhotoModel(uri = it, file = file))
+            }
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -43,13 +75,62 @@ class EditPostFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        
+        // Добавляем меню с подтверждением выхода при редактировании
+        requireActivity().addMenuProvider(object : MenuProvider {
+            override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
+                menuInflater.inflate(R.menu.menu_main, menu)
+                val isAuthenticated = AppAuth.isAuthenticated()
+                menu.findItem(R.id.sign_in)?.isVisible = !isAuthenticated
+                menu.findItem(R.id.sign_up)?.isVisible = !isAuthenticated
+                menu.findItem(R.id.sign_out)?.isVisible = isAuthenticated
+            }
+
+            override fun onMenuItemSelected(menuItem: MenuItem): Boolean {
+                return when (menuItem.itemId) {
+                    R.id.sign_out -> {
+                        // Показываем диалог подтверждения выхода
+                        ConfirmSignOutDialog().show(childFragmentManager, ConfirmSignOutDialog.TAG)
+                        true
+                    }
+                    else -> false
+                }
+            }
+        }, viewLifecycleOwner, Lifecycle.State.RESUMED)
+        
+        // Наблюдаем за фото
+        viewLifecycleOwner.lifecycleScope.launch {
+            postViewModel.photo.collectLatest { photo ->
+                binding.photoContainer.isVisible = photo != null
+                photo?.uri?.let { uri ->
+                    Glide.with(requireContext())
+                        .load(uri)
+                        .into(binding.photoPreview)
+                }
+            }
+        }
+        
+        binding.btnAddPhoto.setOnClickListener {
+            ImagePicker.with(this)
+                .crop()
+                .compress(2048)
+                .createIntent { intent ->
+                    pickPhotoLauncher.launch(intent)
+                }
+        }
+        
+        binding.btnRemovePhoto.setOnClickListener {
+            postViewModel.clearPhoto()
+        }
 
         if (postId == 0L) {
-            draftViewModel.draft.observe(viewLifecycleOwner) { content ->
-                val current = binding.input.text?.toString().orEmpty()
-                if (current != content) {
-                    binding.input.setText(content)
-                    binding.input.setSelection(binding.input.text?.length ?: 0)
+            viewLifecycleOwner.lifecycleScope.launch {
+                draftViewModel.draft.collectLatest { content ->
+                    val current = binding.input.text?.toString().orEmpty()
+                    if (current != content) {
+                        binding.input.setText(content)
+                        binding.input.setSelection(binding.input.text?.length ?: 0)
+                    }
                 }
             }
             binding.input.doOnTextChanged { text, _, _, _ ->
@@ -75,6 +156,7 @@ class EditPostFragment : Fragment() {
             parentFragmentManager.popBackStack()
         }
         binding.btnCancel.setOnClickListener {
+            postViewModel.clearPhoto()
             parentFragmentManager.popBackStack()
         }
 
@@ -85,6 +167,12 @@ class EditPostFragment : Fragment() {
             isEnabled = false
             requireActivity().onBackPressedDispatcher.onBackPressed()
         }
+    }
+
+    override fun onSignOutConfirmed() {
+        AppAuth.removeAuth()
+        postViewModel.clearPhoto()
+        parentFragmentManager.popBackStack()
     }
 
     override fun onDestroyView() {

@@ -1,12 +1,12 @@
 package ru.netology.nmedia.db
 
-import androidx.lifecycle.LiveData
 import androidx.room.*
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface PostDao {
     @Query("SELECT * FROM posts ORDER BY id DESC")
-    fun getAll(): LiveData<List<PostEntity>>
+    fun getAll(): Flow<List<PostEntity>>
 
     @Query("SELECT * FROM posts WHERE id = :id")
     suspend fun getById(id: Long): PostEntity?
