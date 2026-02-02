@@ -5,6 +5,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import ru.netology.nmedia.dto.AuthState
+import ru.netology.nmedia.service.FirebaseService
 
 object AppAuth {
     private const val PREFS_NAME = "auth"
@@ -23,6 +24,8 @@ object AppAuth {
         if (id != 0L && token != null) {
             _authState.value = AuthState(id, token)
         }
+        // Отправляем push token при запуске
+        FirebaseService.sendPushTokenToServer()
     }
 
     fun setAuth(id: Long, token: String) {
@@ -32,6 +35,8 @@ object AppAuth {
             putString(KEY_TOKEN, token)
             apply()
         }
+        // Отправляем push token после входа
+        FirebaseService.sendPushTokenToServer()
     }
 
     fun removeAuth() {
@@ -40,6 +45,8 @@ object AppAuth {
             clear()
             apply()
         }
+        // Отправляем push token после выхода
+        FirebaseService.sendPushTokenToServer()
     }
 
     fun isAuthenticated(): Boolean = _authState.value.token != null

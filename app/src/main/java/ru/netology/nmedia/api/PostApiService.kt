@@ -6,8 +6,12 @@ import retrofit2.Response
 import retrofit2.http.*
 import ru.netology.nmedia.dto.AuthState
 import ru.netology.nmedia.dto.Post
+import ru.netology.nmedia.dto.PushToken
 
 interface PostApiService {
+    // Push токен
+    @POST("api/users/push-tokens")
+    suspend fun savePushToken(@Body token: PushToken): Response<Unit>
     @GET("api/posts")
     suspend fun getAll(): Response<List<Post>>
 
