@@ -6,6 +6,7 @@ import android.view.MenuItem
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
+import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import ru.netology.nmedia.R
@@ -16,6 +17,7 @@ import ru.netology.nmedia.ui.SignInFragment
 import ru.netology.nmedia.ui.SignUpFragment
 import ru.netology.nmedia.viewmodel.PostViewModel
 
+@AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private val viewModel: PostViewModel by viewModels()

@@ -1,6 +1,7 @@
 package ru.netology.nmedia.service
 
 import android.app.PendingIntent
+import android.content.Context
 import android.content.Intent
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
@@ -8,18 +9,20 @@ import com.google.firebase.messaging.FirebaseMessaging
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import com.google.gson.Gson
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
+import dagger.hilt.android.AndroidEntryPoint
+import dagger.hilt.android.EntryPointAccessors
 import ru.netology.nmedia.App
 import ru.netology.nmedia.R
 import ru.netology.nmedia.activity.MainActivity
-import ru.netology.nmedia.api.RetrofitClient
 import ru.netology.nmedia.auth.AppAuth
-import ru.netology.nmedia.dto.PushToken
+import ru.netology.nmedia.di.PushTokenEntryPoint
 import kotlin.random.Random
+import javax.inject.Inject
 
+@AndroidEntryPoint
 class FirebaseService : FirebaseMessagingService() {
+    @Inject
+    lateinit var pushTokenSender: PushTokenSender
     private val gson = Gson()
 
     override fun onNewToken(token: String) {
@@ -124,37 +127,14 @@ class FirebaseService : FirebaseMessagingService() {
     }
 
     private fun sendPushToken(token: String? = null) {
-        CoroutineScope(Dispatchers.IO).launch {
-            try {
-                val pushToken = token ?: FirebaseMessaging.getInstance().token.await()
-                RetrofitClient.postApiService.savePushToken(PushToken(pushToken))
-                android.util.Log.d("FCM", "Push token sent successfully")
-            } catch (e: Exception) {
-                android.util.Log.e("FCM", "Error sending push token", e)
-            }
-        }
+        pushTokenSender.send(token)
     }
 
     companion object {
-        fun sendPushTokenToServer() {
-            CoroutineScope(Dispatchers.IO).launch {
-                try {
-                    val token = FirebaseMessaging.getInstance().token.await()
-                    RetrofitClient.postApiService.savePushToken(PushToken(token))
-                    android.util.Log.d("FCM", "Push token sent successfully from companion")
-                } catch (e: Exception) {
-                    android.util.Log.e("FCM", "Error sending push token from companion", e)
-                }
-            }
+        fun sendPushTokenToServer(context: Context) {
+            val entryPoint = EntryPointAccessors.fromApplication(context, PushTokenEntryPoint::class.java)
+            entryPoint.pushTokenSender().send()
         }
-    }
-}
-
-// Extension для await Task
-private suspend fun <T> com.google.android.gms.tasks.Task<T>.await(): T {
-    return kotlinx.coroutines.suspendCancellableCoroutine { cont ->
-        addOnSuccessListener { result -> cont.resume(result) { } }
-        addOnFailureListener { exception -> cont.cancel(exception) }
     }
 }
 

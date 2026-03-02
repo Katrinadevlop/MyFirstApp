@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     id("org.jetbrains.kotlin.kapt")
+    id("com.google.dagger.hilt.android")
     // id("com.google.gms.google-services")
 }
 
@@ -43,8 +44,16 @@ kotlin {
     }
 }
 
+kapt {
+    correctErrorTypes = true
+}
+
 dependencies {
     val room = "2.7.0"
+    val hilt = "2.52"
+
+    implementation("com.google.dagger:hilt-android:$hilt")
+    kapt("com.google.dagger:hilt-android-compiler:$hilt")
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)

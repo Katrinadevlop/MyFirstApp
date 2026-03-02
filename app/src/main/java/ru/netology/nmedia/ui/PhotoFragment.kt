@@ -7,10 +7,12 @@ import android.view.ViewGroup
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
+import dagger.hilt.android.AndroidEntryPoint
 import com.bumptech.glide.Glide
 import ru.netology.nmedia.R
 import ru.netology.nmedia.databinding.FragmentPhotoBinding
 
+@AndroidEntryPoint
 class PhotoFragment : Fragment() {
     private var _binding: FragmentPhotoBinding? = null
     private val binding get() = _binding!!

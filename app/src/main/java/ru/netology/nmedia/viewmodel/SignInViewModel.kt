@@ -2,12 +2,14 @@ package ru.netology.nmedia.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import ru.netology.nmedia.api.RetrofitClient
+import ru.netology.nmedia.api.PostApiService
 import ru.netology.nmedia.auth.AppAuth
+import javax.inject.Inject
 
 data class SignInState(
     val loading: Boolean = false,
@@ -16,7 +18,10 @@ data class SignInState(
     val errorMessage: String? = null,
 )
 
-class SignInViewModel : ViewModel() {
+@HiltViewModel
+class SignInViewModel @Inject constructor(
+    private val apiService: PostApiService,
+) : ViewModel() {
     private val _state = MutableStateFlow(SignInState())
     val state: StateFlow<SignInState> = _state.asStateFlow()
 
@@ -29,7 +34,7 @@ class SignInViewModel : ViewModel() {
         viewModelScope.launch {
             _state.value = SignInState(loading = true)
             try {
-                val response = RetrofitClient.postApiService.authenticate(login, password)
+                val response = apiService.authenticate(login, password)
                 if (response.isSuccessful) {
                     val body = response.body()
                     if (body != null && body.id != 0L && body.token != null) {

@@ -19,6 +19,7 @@ import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import dagger.hilt.android.AndroidEntryPoint
 import com.github.dhaval2404.imagepicker.ImagePicker
 import com.bumptech.glide.Glide
 import kotlinx.coroutines.flow.collectLatest
@@ -32,6 +33,7 @@ import ru.netology.nmedia.viewmodel.DraftViewModel
 import ru.netology.nmedia.viewmodel.PostViewModel
 import java.io.File
 
+@AndroidEntryPoint
 class EditPostFragment : Fragment(), ConfirmSignOutDialog.ConfirmSignOutListener {
     private var _binding: FragmentEditPostBinding? = null
     private val binding get() = _binding!!

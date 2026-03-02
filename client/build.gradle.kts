@@ -1,5 +1,5 @@
 plugins {
-    alias(libs.plugins.kotlin.jvm)
+    kotlin("jvm")
     alias(libs.plugins.kotlin.serialization)
     application
 }
@@ -7,9 +7,6 @@ plugins {
 group = "ru.netology"
 version = "1.0-SNAPSHOT"
 
-repositories {
-    mavenCentral()
-}
 
 dependencies {
     implementation("org.jetbrains.kotlin:kotlin-stdlib")

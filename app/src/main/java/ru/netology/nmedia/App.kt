@@ -3,30 +3,33 @@ package ru.netology.nmedia
 import android.app.Application
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import ru.netology.nmedia.auth.AppAuth
-import ru.netology.nmedia.db.AppDb
+import ru.netology.nmedia.db.PostDao
 import ru.netology.nmedia.db.PostEntity
 import ru.netology.nmedia.dto.Post
 import java.io.File
+import javax.inject.Inject
 
+@HiltAndroidApp
 class App : Application() {
+    @Inject
+    lateinit var postDao: PostDao
+
     override fun onCreate() {
         super.onCreate()
 
         AppAuth.init(this)
         createNotificationChannels()
 
-        val db = AppDb.get(this)
-        val dao = db.postDao()
-
         CoroutineScope(Dispatchers.IO).launch {
-            if (dao.count() == 0) {
+            if (postDao.count() == 0) {
                 val initial = loadFromFile() ?: defaultPosts()
                 if (initial.isNotEmpty()) {
-                    dao.insert(initial.map(PostEntity.Companion::fromDto))
+                    postDao.insert(initial.map(PostEntity.Companion::fromDto))
                 }
             }
         }

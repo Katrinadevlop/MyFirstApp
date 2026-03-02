@@ -16,16 +16,18 @@ object AppAuth {
     val authState: StateFlow<AuthState> = _authState.asStateFlow()
 
     private lateinit var prefs: android.content.SharedPreferences
+    private lateinit var appContext: Context
 
     fun init(context: Context) {
-        prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        appContext = context.applicationContext
+        prefs = appContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         val id = prefs.getLong(KEY_ID, 0L)
         val token = prefs.getString(KEY_TOKEN, null)
         if (id != 0L && token != null) {
             _authState.value = AuthState(id, token)
         }
         // Отправляем push token при запуске
-        FirebaseService.sendPushTokenToServer()
+        FirebaseService.sendPushTokenToServer(appContext)
     }
 
     fun setAuth(id: Long, token: String) {
@@ -36,7 +38,7 @@ object AppAuth {
             apply()
         }
         // Отправляем push token после входа
-        FirebaseService.sendPushTokenToServer()
+        FirebaseService.sendPushTokenToServer(appContext)
     }
 
     fun removeAuth() {
@@ -46,7 +48,7 @@ object AppAuth {
             apply()
         }
         // Отправляем push token после выхода
-        FirebaseService.sendPushTokenToServer()
+        FirebaseService.sendPushTokenToServer(appContext)
     }
 
     fun isAuthenticated(): Boolean = _authState.value.token != null

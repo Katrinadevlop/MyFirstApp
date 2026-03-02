@@ -1,18 +1,20 @@
 package ru.netology.nmedia.repository
 
-import android.app.Application
 import android.util.Log
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import ru.netology.nmedia.api.RetrofitClient
-import ru.netology.nmedia.db.AppDb
+import ru.netology.nmedia.api.PostApiService
+import ru.netology.nmedia.db.PostDao
 import ru.netology.nmedia.db.PostEntity
 import ru.netology.nmedia.dto.Post
+import javax.inject.Inject
+import javax.inject.Singleton
 
-class PostRepositoryHybridImpl(application: Application) : PostRepository {
-    private val db = AppDb.get(application)
-    private val dao = db.postDao()
-    private val apiService = RetrofitClient.postApiService
+@Singleton
+class PostRepositoryHybridImpl @Inject constructor(
+    private val dao: PostDao,
+    private val apiService: PostApiService,
+) : PostRepository {
 
     override val data: Flow<List<Post>> = dao.getAll()
         .map { entities -> entities.map { it.toDto() } }

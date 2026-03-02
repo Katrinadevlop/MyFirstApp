@@ -3,6 +3,7 @@ package ru.netology.nmedia.viewmodel
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -11,9 +12,10 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.asRequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
-import ru.netology.nmedia.api.RetrofitClient
+import ru.netology.nmedia.api.PostApiService
 import ru.netology.nmedia.auth.AppAuth
 import java.io.File
+import javax.inject.Inject
 
 data class SignUpState(
     val loading: Boolean = false,
@@ -27,7 +29,10 @@ data class AvatarModel(
     val file: File,
 )
 
-class SignUpViewModel : ViewModel() {
+@HiltViewModel
+class SignUpViewModel @Inject constructor(
+    private val apiService: PostApiService,
+) : ViewModel() {
     private val _state = MutableStateFlow(SignUpState())
     val state: StateFlow<SignUpState> = _state.asStateFlow()
 
@@ -66,10 +71,10 @@ class SignUpViewModel : ViewModel() {
                         avatarModel.file.name,
                         avatarModel.file.asRequestBody()
                     )
-                    RetrofitClient.postApiService.registerWithPhoto(loginPart, passPart, namePart, mediaPart)
+                    apiService.registerWithPhoto(loginPart, passPart, namePart, mediaPart)
                 } ?: run {
                     // Регистрация без фото
-                    RetrofitClient.postApiService.register(login, password, name)
+                    apiService.register(login, password, name)
                 }
 
                 if (response.isSuccessful) {
