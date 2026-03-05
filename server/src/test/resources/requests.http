@@ -1,6 +1,6 @@
 ### Получение списка сообщений
 
-GET http://localhost:9999/api/posts
+GET http://localhost:9998/api/posts
 
 > {%
 client.test("Request executed successfully", function() {
@@ -11,7 +11,7 @@ client.test("Request executed successfully", function() {
 
 ### Создание нового сообщения (id = 0)
 
-POST http://localhost:9999/api/posts
+POST http://localhost:9998/api/posts
 Content-Type: application/json
 
 {
@@ -39,7 +39,7 @@ client.test("Request executed successfully", function() {
 
 ### Получение сообщения по id
 
-GET http://localhost:9999/api/posts/6
+GET http://localhost:9998/api/posts/6
 
 > {%
 client.test("Request executed successfully", function() {
@@ -52,7 +52,7 @@ client.test("Request executed successfully", function() {
 
 ### Обновление сообщения (id != 0)
 
-POST http://localhost:9999/api/posts
+POST http://localhost:9998/api/posts
 Content-Type: application/json
 
 {
@@ -76,7 +76,7 @@ client.test("Request executed successfully", function() {
 
 ### Like сообщения
 
-POST http://localhost:9999/api/posts/6/likes
+POST http://localhost:9998/api/posts/6/likes
 
 > {%
 client.test("Request executed successfully", function() {
@@ -86,7 +86,7 @@ client.test("Request executed successfully", function() {
 
 ### Получение сообщения по id
 
-GET http://localhost:9999/api/posts/6
+GET http://localhost:9998/api/posts/6
 
 > {%
 client.test("Request executed successfully", function() {
@@ -101,7 +101,7 @@ client.test("Request executed successfully", function() {
 
 ### Дизлайк сообщения
 
-DELETE http://localhost:9999/api/posts/6/likes
+DELETE http://localhost:9998/api/posts/6/likes
 
 > {%
 client.test("Request executed successfully", function() {
@@ -111,7 +111,7 @@ client.test("Request executed successfully", function() {
 
 ### Получение сообщения по id
 
-GET http://localhost:9999/api/posts/6
+GET http://localhost:9998/api/posts/6
 
 > {%
 client.test("Request executed successfully", function() {
@@ -125,7 +125,7 @@ client.test("Request executed successfully", function() {
 
 ### Удаление сообщения по id
 
-DELETE http://localhost:9999/api/posts/6
+DELETE http://localhost:9998/api/posts/6
 
 > {%
 client.test("Request executed successfully", function() {
@@ -135,7 +135,7 @@ client.test("Request executed successfully", function() {
 
 ### Получение несуществующего сообщения
 
-GET http://localhost:9999/api/posts/6
+GET http://localhost:9998/api/posts/6
 
 > {%
 client.test("Request executed successfully", function() {
@@ -145,7 +145,7 @@ client.test("Request executed successfully", function() {
 
 ### Получение аватарки
 
-GET http://localhost:9999/avatars/sber.jpg
+GET http://localhost:9998/avatars/sber.jpg
 
 > {%
 client.test("Request executed successfully", function() {
@@ -156,7 +156,7 @@ client.test("Request executed successfully", function() {
 
 ### Получение изображения
 
-GET http://localhost:9999/images/sbercard.jpg
+GET http://localhost:9998/images/sbercard.jpg
 
 > {%
 client.test("Request executed successfully", function() {

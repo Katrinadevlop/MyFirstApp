@@ -23,7 +23,7 @@ fun main() {
             printPosts(posts)
         } catch (e: Exception) {
             println("Ошибка: ${e.message}")
-            println("Убедитесь, что сервер запущен на localhost:9999")
+            println("Убедитесь, что сервер запущен на localhost:9998")
         }
     }
     println("Время выполнения: $timeSequential мс\n")

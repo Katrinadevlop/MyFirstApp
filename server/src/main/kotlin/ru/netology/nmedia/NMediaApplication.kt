@@ -17,8 +17,7 @@ class NMediaApplication {
             save(
                 Post(
                     id = 0,
-                    author = "Netology",
-                    authorAvatar = "netology.jpg",
+                    authorId = 1,
                     content = "Привет, это новая Нетология!",
                     published = 0,
                     likedByMe = false,
@@ -28,8 +27,7 @@ class NMediaApplication {
             save(
                 Post(
                     id = 0,
-                    author = "Сбер",
-                    authorAvatar = "sber.jpg",
+                    authorId = 2,
                     content = "Привет, это новый Сбер!",
                     published = 0,
                     likedByMe = false,
@@ -39,8 +37,7 @@ class NMediaApplication {
             save(
                 Post(
                     id = 0,
-                    author = "Тинькофф",
-                    authorAvatar = "tcs.jpg",
+                    authorId = 3,
                     content = "Нам и так норм!",
                     published = 0,
                     likedByMe = false,
@@ -50,8 +47,7 @@ class NMediaApplication {
             save(
                 Post(
                     id = 0,
-                    author = "Netology",
-                    authorAvatar = "netology.jpg",
+                    authorId = 1,
                     content = "Подкасты любят за возможность проводить время с пользой и слушать познавательные лекции или беседы во время прогулок или домашних дел. Интересно, что запустить свой подкаст и обсуждать интересные темы может любой.",
                     published = 0,
                     likedByMe = false,
@@ -66,8 +62,7 @@ class NMediaApplication {
             save(
                 Post(
                     id = 0,
-                    author = "Сбер",
-                    authorAvatar = "sber.jpg",
+                    authorId = 2,
                     content = "Появился новый способ мошенничества \uD83D\uDE21 Злоумышленники звонят от имени банка и говорят, что для клиента выпущена новая, особо защищённая карта, которую можно добавить в приложение Кошелёк на смартфоне. Под диктовку мошенника человек привязывает к Кошельку его карту, причём указывает своё имя. Если карту пополнить, деньги уйдут мошеннику.\n\nДело в том, что в Кошелёк можно добавить любую, даже чужую карту, а имя поставить какое угодно. Но чужая банковская карта не будет отображаться, например, в СберБанк Онлайн.",
                     published = 0,
                     likedByMe = false,

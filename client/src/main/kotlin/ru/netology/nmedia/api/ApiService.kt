@@ -8,7 +8,7 @@ import ru.netology.nmedia.dto.*
 import java.io.IOException
 
 class ApiService(
-    private val baseUrl: String = "http://localhost:9999"
+    private val baseUrl: String = "http://localhost:9998"
 ) {
     private val client = OkHttpClient()
     private val gson = Gson()
